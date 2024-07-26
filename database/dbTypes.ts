@@ -1,4 +1,4 @@
-import {IRLModel, IRLRecord} from "../model/modelTypes.ts";
+import {EntityMeta, IRLRecord} from "../model/modelTypes.ts";
 
 export type AccountName = string;
 export type TableName = string;
@@ -16,25 +16,25 @@ export interface IRLDBAdapter {
     record: {
         create: (
             accountName: AccountName,
-            model: IRLModel,
+            model: EntityMeta,
             data: IRLRecord,
         ) => Promise<void>;
         update: (
             accountName: AccountName,
-            model: IRLModel,
+            model: EntityMeta,
             data: IRLRecord,
         ) => Promise<IRLRecord>;
         delete: (
             accountName: AccountName,
-            model: IRLModel,
+            model: EntityMeta,
             id: RecordId,
         ) => Promise<IRLRecord>;
         getSingle: (
             accountName: AccountName,
-            model: IRLModel,
+            model: EntityMeta,
             id: RecordId,
         ) => Promise<IRLRecord>;
-        getList: (accountName: AccountName, model: IRLModel, options?: {
+        getList: (accountName: AccountName, model: EntityMeta, options?: {
             columns?: string[];
             filters?: Record<string, any>;
         }) => Promise<IRLRecord[]>;

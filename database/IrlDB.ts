@@ -1,4 +1,4 @@
-import {IRLModel, IRLRecord} from "../model/modelTypes.ts";
+import {EntityMeta, IRLRecord} from "../model/modelTypes.ts";
 import {AccountName, IRLDBAdapter, IRLDBAdapterClass, ModelId, RecordId} from "./dbTypes.ts";
 import {jsonDBAdapter} from "./adapters/jsonAdapter.ts";
 import {PostgresDB} from "./postgres/postgresDBAdapter.ts";
@@ -9,7 +9,7 @@ export class IRLDB {
     dbName: string = "DbAdapter";
     cache: MemcachePool;
     adapter: PostgresDB;
-    models: IRLModel[] = [];
+    models: EntityMeta[] = [];
     accountName: AccountName = "default_account";
 
 
@@ -31,7 +31,7 @@ export class IRLDB {
 
     async migrate() {
         await this.refreshModels();
-        const syncModel = (account: AccountName, model: IRLModel) => {
+        const syncModel = (account: AccountName, model: EntityMeta) => {
             this.adapter.createTable(account, model.id);
             for (const field of model.fields) {
                 this.adapter.addColumn(account, model.id, field.id, field.fieldType);

@@ -1,4 +1,4 @@
-import {IRLModel, IRLRecord} from "../../model/modelTypes.ts";
+import {EntityMeta, IRLRecord} from "../../model/modelTypes.ts";
 import {AccountName, IRLDBAdapterClass, RecordId, TableName} from "../dbTypes.ts";
 import {PostgresClient} from "./postgresClient.ts";
 import {raiseIRLException} from "../../exceptions/exceptions.ts";
