@@ -51,8 +51,8 @@ export class Database {
   async getRows<T>(tableName: string): Promise<T[]> {
     return await this.adapter.getRows(tableName);
   }
-  async getRow<T>(tableName: string, id: string): Promise<T> {
-    return await this.adapter.getRow(tableName, id);
+  async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
+    return await this.adapter.getRow(tableName, field, value);
   }
   async getRowByField<T>(
     tableName: string,
