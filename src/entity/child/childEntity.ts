@@ -1,5 +1,5 @@
-import { ORMField } from "./ormField.ts";
-import { DATE_TIME, ID } from "./fieldTypes.ts";
+import { ORMField } from "../field/ormField.ts";
+import { DATE_TIME, ID } from "../field/fieldTypes.ts";
 
 export abstract class ChildEntityModel {
     abstract parentEntityModel: string;

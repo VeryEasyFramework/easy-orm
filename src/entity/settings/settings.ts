@@ -1,5 +1,5 @@
-import {ORMField} from "./ormField.ts";
-import {DATA, DATE_TIME, ID} from "./fieldTypes.ts";
+import { ORMField } from "../field/ormField.ts";
+import { DATA, DATE_TIME, ID } from "../field/fieldTypes.ts";
 
 export interface SettingsMeta {
     settings: string;

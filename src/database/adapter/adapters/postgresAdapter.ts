@@ -1,6 +1,23 @@
 import { DatabaseAdapter } from "../databaseAdapter.ts";
+import {
+  ClientOptions,
+  Pool,
+} from "https://deno.land/x/postgres@v0.19.3/mod.ts";
 
-export class PostgresAdapter extends DatabaseAdapter {
+export interface PostgresConfig {
+  connection_params: ClientOptions;
+  size: number;
+  lazy?: boolean;
+}
+export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
+  private pool!: Pool;
+  init() {
+    const config = this.config;
+    const params = config.connection_params;
+    const size = config.size;
+    const lazy = config.lazy || false;
+    this.pool = new Pool(params, size, lazy);
+  }
   update(
     tableName: string,
     id: any,

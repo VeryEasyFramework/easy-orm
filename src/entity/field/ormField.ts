@@ -11,10 +11,12 @@ export interface FieldTypes {
     MultiChoiceField: string[];
 }
 
-type ExtractFieldType<T> = T extends keyof FieldTypes ? FieldTypes[T] : never;
+export type ExtractFieldType<T> = T extends keyof FieldTypes ? FieldTypes[T]
+    : never;
 
-export interface ORMField {
-    key: string;
+export type ExtractFieldKey<T> = T extends ORMField ? T["key"] : never;
+export interface ORMField<P extends PropertyKey = PropertyKey> {
+    key: P;
     label: string;
     description?: string;
     fieldType: keyof FieldTypes;

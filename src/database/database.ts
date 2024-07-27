@@ -1,24 +1,38 @@
-import { PostgresAdapter } from "./adapter/adapters/postgresAdapter.ts";
+import {
+  PostgresAdapter,
+  PostgresConfig,
+} from "./adapter/adapters/postgresAdapter.ts";
 import { DatabaseAdapter } from "./adapter/databaseAdapter.ts";
 
 export type DatabaseType = "postgres" | "json";
-export class Database {
-  adapter: DatabaseAdapter;
 
-  private config: Record<string, any>;
+export type DatabaseConfig = {
+  "postgres": PostgresConfig;
+  "json": Record<string, any>;
+};
+export class Database<A extends DatabaseType> {
+  adapter: DatabaseAdapter<DatabaseConfig[A]>;
+
+  private config: DatabaseConfig[A];
 
   constructor(options: {
-    adapter: DatabaseType;
-    config: Record<string, any>;
+    adapter: A;
+    config: DatabaseConfig[A];
   }) {
     this.config = options.config;
     switch (options.adapter) {
-      case "postgres":
-        this.adapter = new PostgresAdapter(options.config);
+      case "postgres": {
+        const config = options.config as PostgresConfig;
+        this.adapter = new PostgresAdapter(config);
         break;
+      }
       default:
         throw new Error("Invalid adapter");
     }
+  }
+
+  init() {
+    this.adapter.init();
   }
   async connect(): Promise<void> {
     await this.adapter.connect();

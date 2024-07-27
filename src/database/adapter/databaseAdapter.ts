@@ -1,9 +1,12 @@
-export abstract class DatabaseAdapter {
+export abstract class DatabaseAdapter<C> {
   // require constructor with a config object
-  private config: Record<string, any>;
-  constructor(config: Record<string, any>) {
+  protected config: C;
+  constructor(config: C) {
     this.config = config;
+    this.init();
   }
+
+  abstract init(): void;
   abstract connect(): Promise<void>;
 
   abstract disconnect(): Promise<void>;

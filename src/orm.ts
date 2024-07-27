@@ -1,29 +1,42 @@
+import { ID } from "./entity/field/fieldTypes.ts";
+
+import { Database, DatabaseConfig, DatabaseType } from "./database/database.ts";
+
 import {
-  CreateEntity,
-  Entity,
-  EntityModelConstructor,
-  UpdateEntity,
-} from "./types/entityTypes.ts";
-import { ID } from "./fieldTypes.ts";
-import { EntityModel } from "./entityModel.ts";
-import { Database, DatabaseType } from "./database/database.ts";
+  EntityDefinition,
+  EntityFromDef,
+  ListEntityFromDef,
+} from "./entity/defineEntityTypes.ts";
 
-export class DenoOrm {
-  entities: Record<string, EntityModelConstructor> = {};
+export class DenoOrm<
+  D extends DatabaseType,
+  E extends Array<EntityDefinition>,
+  R extends { [K in E[number] as K["entityId"]]: K },
+  Ids extends keyof R,
+> {
+  entities: R = {} as R;
 
-  private database: Database;
-  constructor(entities: EntityModelConstructor[], options: {
-    databaseType: DatabaseType;
-    databaseConfig: Record<string, any>;
+  private database: Database<D>;
+  constructor(options: {
+    entities: E;
+    databaseType: D;
+    databaseConfig: DatabaseConfig[D];
   }) {
-    for (const entityClass of entities) {
-      this.entities[entityClass.entityId] = entityClass;
-    }
-
     this.database = new Database({
       adapter: options.databaseType,
       config: options.databaseConfig,
     });
+
+    for (const entity of options.entities) {
+      const id = entity.entityId as Ids;
+
+      this.entities[id] = entity as R[Ids];
+    }
+  }
+
+  init() {
+    console.log("Initializing...");
+    this.database.init();
   }
 
   migrate() {
@@ -31,34 +44,34 @@ export class DenoOrm {
   }
 
   getEntityMeta<EntityModel>(entity: string) {
-    return this.entities[entity];
   }
 
-  getEntity<E extends EntityModel>(entity: string, id: ID): Entity<E> {
-    return {} as Entity<E>;
+  getEntity<I extends keyof R>(
+    entity: I,
+    id: ID,
+  ): EntityFromDef<R[I]> {
+    return {} as EntityFromDef<R[I]>;
   }
 
-  createEntity<M extends EntityModel, D extends CreateEntity<M>>(
-    entity: string,
+  createEntity<I extends Ids>(
+    entity: I,
     data: D,
-  ): Entity<M> {
-    return {} as Entity<M>;
+  ): EntityFromDef<R[I]> {
+    return {} as EntityFromDef<R[I]>;
   }
-  static thing() {
-    console.log("thing");
-  }
-  static updateEntity<M extends EntityModel, D extends UpdateEntity<M>>(
-    entity: string,
+
+  updateEntity<I extends Ids>(
+    entity: I,
     id: string,
-    data: D,
-  ): Entity<M> {
-    return {} as Entity<M>;
+    data: Record<string, any>,
+  ): EntityFromDef<R[I]> {
+    return {} as EntityFromDef<R[I]>;
   }
-  deleteEntity<M extends EntityModel>(entity: string, id: string): boolean {
+  deleteEntity<I extends Ids>(entity: I, id: string): boolean {
     return true;
   }
 
-  getEntityList<M extends EntityModel>(entity: string): Entity<M>[] {
-    return [] as Entity<M>[];
+  getEntityList<I extends Ids>(entity: I): ListEntityFromDef<R[I]>[] {
+    return [] as ListEntityFromDef<R[I]>[];
   }
 }

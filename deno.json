@@ -3,6 +3,7 @@
     "dev": "deno run --allow-all main.ts"
   },
   "imports": {
-    "@eveffer/easy-cli": "jsr:@eveffer/easy-cli@^0.1.2"
+    "@eveffer/easy-cli": "jsr:@eveffer/easy-cli@^0.1.2",
+    "@eveffer/string-utils": "jsr:@eveffer/string-utils@^0.1.2"
   }
 }
