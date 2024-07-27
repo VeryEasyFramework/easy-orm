@@ -1,3 +1,10 @@
+import { ListOptions } from "../database.ts";
+
+export interface RowsResult<T> {
+  rowCount: number;
+  data: T[];
+  columns: string[];
+}
 export abstract class DatabaseAdapter<C> {
   // require constructor with a config object
   protected config: C;
@@ -11,7 +18,7 @@ export abstract class DatabaseAdapter<C> {
 
   abstract disconnect(): Promise<void>;
 
-  abstract query(query: string): Promise<any>;
+  abstract query(query: any): Promise<any>;
 
   abstract createTable(tableName: string, fields: any): Promise<void>;
 
@@ -27,19 +34,10 @@ export abstract class DatabaseAdapter<C> {
 
   abstract delete(tableName: string, field: string, value: any): Promise<void>;
 
-  abstract getRows(tableName: string): Promise<any[]>;
-
-  abstract getRow(tableName: string, field: string, value: any): Promise<any>;
-
-  abstract getRowByField(
+  abstract getRows<T>(
     tableName: string,
-    field: string,
-    value: any,
-  ): Promise<any>;
+    options?: ListOptions,
+  ): Promise<RowsResult<T>>;
 
-  abstract getRowsByField(
-    tableName: string,
-    field: string,
-    value: any,
-  ): Promise<any[]>;
+  abstract getRow<T>(tableName: string, field: string, value: any): Promise<T>;
 }

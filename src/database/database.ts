@@ -2,10 +2,17 @@ import {
   PostgresAdapter,
   PostgresConfig,
 } from "./adapter/adapters/postgresAdapter.ts";
-import { DatabaseAdapter } from "./adapter/databaseAdapter.ts";
+import { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
 
 export type DatabaseType = "postgres" | "json";
 
+export type ListOptions = {
+  filter?: Record<string, any>;
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  order?: "asc" | "desc";
+};
 export type DatabaseConfig = {
   "postgres": PostgresConfig;
   "json": Record<string, any>;
@@ -62,24 +69,13 @@ export class Database<A extends DatabaseType> {
   async deleteRow(tableName: string, field: string, value: any): Promise<void> {
     await this.adapter.delete(tableName, field, value);
   }
-  async getRows<T>(tableName: string): Promise<T[]> {
-    return await this.adapter.getRows(tableName);
+  async getRows<T>(
+    tableName: string,
+    options?: ListOptions,
+  ): Promise<RowsResult<T>> {
+    return await this.adapter.getRows(tableName, options);
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
     return await this.adapter.getRow(tableName, field, value);
-  }
-  async getRowByField<T>(
-    tableName: string,
-    field: string,
-    value: any,
-  ): Promise<T> {
-    return await this.adapter.getRowByField(tableName, field, value);
-  }
-  async getRowsByField<T>(
-    tableName: string,
-    field: string,
-    value: any,
-  ): Promise<T[]> {
-    return await this.adapter.getRowsByField(tableName, field, value);
   }
 }

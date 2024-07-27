@@ -33,6 +33,8 @@ export type EntityDef<
   label: string;
   fields: F;
   hooks: EntityHooks;
+  config: EntityConfig;
+  tableName: string;
   actions: A;
 };
 
@@ -67,3 +69,7 @@ export type ListEntityFromDef<T> = T extends
     }
     & BaseFields
   : never;
+
+export interface EntityConfig {
+  tableName?: string;
+}

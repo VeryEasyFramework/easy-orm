@@ -1,9 +1,8 @@
-import { FieldType } from "./fieldTypes.ts";
-
 export interface FieldTypes {
     IDField: string;
     DataField: string;
     IntField: number;
+    BigIntField: bigint;
     DateField: Date;
     BooleanField: boolean;
     PasswordField: string;

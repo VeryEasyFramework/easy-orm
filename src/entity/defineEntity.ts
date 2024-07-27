@@ -1,5 +1,6 @@
 import { type ORMField } from "./field/ormField.ts";
 import type {
+  EntityConfig,
   EntityDef,
   EntityHooks,
   ExtractEntityFields,
@@ -21,6 +22,8 @@ export function defineEntity<
 >(entityId: Id, options: {
   label: string;
   fields: F;
+  tableName?: string;
+  config?: EntityConfig;
   hooks?: H & ThisType<EntityHooks & ExtractEntityFields<F> & A & { orm: Orm }>;
   actions?:
     & A
@@ -36,6 +39,10 @@ export function defineEntity<
       afterInsert: options.hooks?.afterInsert || (() => {}),
     } as EntityHooks,
     actions: options.actions || {} as A,
+    tableName: options.tableName || entityId,
+    config: {
+      ...options.config,
+    } as EntityConfig,
   };
   return output;
 }

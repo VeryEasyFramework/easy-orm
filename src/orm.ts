@@ -1,12 +1,19 @@
 import { ID } from "./entity/field/fieldTypes.ts";
 
-import { Database, DatabaseConfig, DatabaseType } from "./database/database.ts";
+import {
+  Database,
+  DatabaseConfig,
+  DatabaseType,
+  ListOptions,
+} from "./database/database.ts";
 
 import {
+  EntityDefFromModel,
   EntityDefinition,
   EntityFromDef,
   ListEntityFromDef,
 } from "./entity/defineEntityTypes.ts";
+import { RowsResult } from "./database/adapter/databaseAdapter.ts";
 
 export class DenoOrm<
   D extends DatabaseType,
@@ -34,6 +41,10 @@ export class DenoOrm<
     }
   }
 
+  private getEntityDef<I extends Ids>(entity: I): EntityDefFromModel<R[I]> {
+    return this.entities[entity] as EntityDefFromModel<R[I]>;
+  }
+
   init() {
     console.log("Initializing...");
     this.database.init();
@@ -46,11 +57,13 @@ export class DenoOrm<
   getEntityMeta<EntityModel>(entity: string) {
   }
 
-  getEntity<I extends keyof R>(
+  async getEntity<I extends Ids, E extends EntityFromDef<R[I]>>(
     entity: I,
     id: ID,
-  ): EntityFromDef<R[I]> {
-    return {} as EntityFromDef<R[I]>;
+  ): Promise<E> {
+    const { tableName } = this.getEntityDef(entity);
+    const result = await this.database.getRow<E>(tableName, "id", id);
+    return result;
   }
 
   createEntity<I extends Ids>(
@@ -71,7 +84,13 @@ export class DenoOrm<
     return true;
   }
 
-  getEntityList<I extends Ids>(entity: I): ListEntityFromDef<R[I]>[] {
-    return [] as ListEntityFromDef<R[I]>[];
+  async getEntityList<I extends Ids, L extends ListEntityFromDef<R[I]>>(
+    entity: I,
+    options?: ListOptions,
+  ): Promise<RowsResult<L>> {
+    const { tableName } = this.getEntityDef(entity);
+
+    const result = await this.database.getRows<L>(tableName, options);
+    return result;
   }
 }
