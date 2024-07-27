@@ -13,7 +13,7 @@ export abstract class DatabaseAdapter<C> {
     this.init();
   }
 
-  abstract init(): void;
+  abstract init(): Promise<void>;
   abstract connect(): Promise<void>;
 
   abstract disconnect(): Promise<void>;

@@ -71,9 +71,9 @@ export class DenoOrm<
 
     return entityClass;
   }
-  init() {
+  async init() {
     console.log("Initializing...");
-    this.database.init();
+    await this.database.init();
   }
 
   migrate() {

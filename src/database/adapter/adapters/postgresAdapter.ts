@@ -18,13 +18,14 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   private pool!: Pool;
   camelCase: boolean = false;
 
-  init() {
+  async init() {
     const config = this.config;
     const params = config.connection_params;
     const size = config.size;
     const lazy = config.lazy || false;
     this.camelCase = config.camelCase || false;
     this.pool = new Pool(params, size, lazy);
+    await this.pool.initialized();
   }
   update(
     tableName: string,

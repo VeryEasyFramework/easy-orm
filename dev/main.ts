@@ -249,7 +249,7 @@ const orm = new DenoOrm({
   },
 });
 
-orm.init();
+await orm.init();
 
 // // const users = await orm.getEntityList("user");
 // const campaigns = await orm.getEntityList("campaign", {
@@ -258,7 +258,9 @@ orm.init();
 //   },
 // });
 const camp = await orm.getEntity("campaign", "3876");
+const camp2 = await orm.getEntity("campaign", "3877");
 const res = await camp.sendEmail("john@smith.com");
+await camp2.sendEmail("jane@fmailcom");
 // const { rowCount, columns, data } = campaigns;
 // console.log(rowCount);
 // console.log(columns);

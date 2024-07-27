@@ -38,8 +38,8 @@ export class Database<A extends DatabaseType> {
     }
   }
 
-  init() {
-    this.adapter.init();
+  async init() {
+    await this.adapter.init();
   }
   async connect(): Promise<void> {
     await this.adapter.connect();
