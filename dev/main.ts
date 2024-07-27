@@ -49,6 +49,13 @@ const user = defineEntity("user", {
   label: "User",
   hooks: {
     async beforeSave() {
+      console.log("Before Save");
+      this.sayHello();
+    },
+  },
+  actions: {
+    async sayHello() {
+      console.log("Hello");
     },
   },
 });
@@ -214,6 +221,8 @@ const campaign = defineEntity("campaign", {
   },
   actions: {
     async sendEmail(email: string) {
+      console.log(`Sending email to ${email}`);
+      console.log(this.emails);
     },
   },
 });
@@ -242,17 +251,18 @@ const orm = new DenoOrm({
 
 orm.init();
 
-// const users = await orm.getEntityList("user");
-const campaigns = await orm.getEntityList("campaign", {
-  filter: {
-    isLive: true,
-  },
-});
-// const camp = await orm.getEntity("campaign", "3876");
-const { rowCount, columns, data } = campaigns;
-console.log(rowCount);
-console.log(columns);
-console.log(data.length);
+// // const users = await orm.getEntityList("user");
+// const campaigns = await orm.getEntityList("campaign", {
+//   filter: {
+//     isLive: true,
+//   },
+// });
+const camp = await orm.getEntity("campaign", "3876");
+const res = await camp.sendEmail("john@smith.com");
+// const { rowCount, columns, data } = campaigns;
+// console.log(rowCount);
+// console.log(columns);
+// console.log(data.length);
 // console.log(data);
 
 // console.table(data, columns);

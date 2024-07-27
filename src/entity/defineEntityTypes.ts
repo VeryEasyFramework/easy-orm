@@ -1,3 +1,4 @@
+import { DatabaseType } from "../database/database.ts";
 import { DenoOrm } from "../orm.ts";
 import { FieldTypes, ORMField } from "./field/ormField.ts";
 
@@ -14,9 +15,10 @@ export interface EntityHooks {
   afterSave(): void;
   beforeInsert(): void;
   afterInsert(): void;
+  validate(): void;
 }
 
-export type Orm = DenoOrm<any, any, any, any>;
+export type Orm = DenoOrm<DatabaseType, Array<EntityDefinition>, any, any, any>;
 
 export type ExtractEntityFields<F extends ORMField[]> = {
   [K in F[number] as K["key"]]: FieldTypes[K["fieldType"]];
@@ -38,7 +40,13 @@ export type EntityDef<
   actions: A;
 };
 
-export type EntityDefinition = EntityDef<string, any, any, any, any>;
+export type EntityDefinition<Id extends string = string> = EntityDef<
+  Id,
+  PropertyKey,
+  ORMField[],
+  PropertyKey,
+  Record<PropertyKey, (...args: any[]) => Promise<void>>
+>;
 
 export type EntityIds<E extends EntityDefinition[]> = E[number]["entityId"];
 
@@ -72,4 +80,15 @@ export type ListEntityFromDef<T> = T extends
 
 export interface EntityConfig {
   tableName?: string;
+}
+
+export interface EntityClassConstructor<E extends EntityDefinition> {
+  new (
+    data: ExtractEntityFields<E["fields"]>,
+  ):
+    & EntityFromDef<any>
+    & E["actions"]
+    & E["hooks"]
+    & { orm: Orm }
+    & ExtractEntityFields<E["fields"]>;
 }
