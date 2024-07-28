@@ -1,16 +1,21 @@
 import type { ListOptions } from "../../database.ts";
 import { DatabaseAdapter, type RowsResult } from "../databaseAdapter.ts";
+import { camelToSnakeCase } from "@eveffer/string-utils";
+import {
+  type ClientOptions,
+  Pool,
+  type QueryObjectOptions,
+  type QueryObjectResult,
+} from "../../../../deps.ts";
 
-import { postgres } from "../../../../deps.ts";
-import { stringUtils } from "../../../../deps.ts";
 export interface PostgresConfig {
-  connection_params: postgres.ClientOptions;
+  connection_params: ClientOptions;
   size: number;
   lazy?: boolean;
   camelCase?: boolean;
 }
 export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
-  private pool!: postgres.Pool;
+  private pool!: Pool;
   camelCase: boolean = false;
 
   async init() {
@@ -19,7 +24,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const size = config.size;
     const lazy = config.lazy || false;
     this.camelCase = config.camelCase || false;
-    this.pool = new postgres.Pool(params, size, lazy);
+    this.pool = new Pool(params, size, lazy);
     await this.pool.initialized();
   }
   update(
@@ -38,9 +43,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async disconnect(): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  async query<T>(
-    query: postgres.QueryObjectOptions,
-  ): Promise<postgres.QueryObjectResult<T>> {
+  async query<T>(query: QueryObjectOptions): Promise<QueryObjectResult<T>> {
     using client = await this.pool.connect();
     const result = await client.queryObject<T>({
       ...query,
@@ -70,7 +73,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     let query = `SELECT * FROM ${tableName}`;
     if (options?.filter) {
       for (let [key, value] of Object.entries(options.filter)) {
-        key = stringUtils.camelToSnakeCase(key);
+        key = camelToSnakeCase(key);
         query += ` WHERE ${key} = ${value}`;
       }
     }

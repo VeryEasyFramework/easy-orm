@@ -10,7 +10,15 @@
     "include": [
       "mod.ts",
       "src",
-      "deps.ts"
+      "deps.ts",
+      "README.md",
+      "LICENSE"
     ]
+  },
+  "importMap": "vendor/import_map.json",
+  "imports": {
+    "#/": "./src/",
+    "@eveffer/string-utils": "jsr:@eveffer/string-utils@^0.1.2",
+    "deno-postgres": "https://deno.land/x/postgres@v0.19.3/mod.ts"
   }
 }

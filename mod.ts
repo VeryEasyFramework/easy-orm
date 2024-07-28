@@ -1,3 +1,3 @@
-import { DenoOrm } from "./src/orm.ts";
+import { DenoOrm } from "#/orm.ts";
 
 export { DenoOrm };

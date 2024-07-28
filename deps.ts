@@ -1,3 +1,8 @@
-import * as postgres from "https://deno.land/x/postgres@v0.19.3/mod.ts";
-import * as stringUtils from "jsr:@eveffer/string-utils@^0.1.2";
-export { postgres, stringUtils };
+export * from "@eveffer/string-utils";
+
+export {
+  type ClientOptions,
+  Pool,
+  type QueryObjectOptions,
+  type QueryObjectResult,
+} from "deno-postgres";
