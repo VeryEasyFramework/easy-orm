@@ -1,8 +1,8 @@
 import {
   PostgresAdapter,
-  PostgresConfig,
+  type PostgresConfig,
 } from "./adapter/adapters/postgresAdapter.ts";
-import { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
+import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
 
 export type DatabaseType = "postgres" | "json";
 

@@ -1,5 +1,3 @@
-import { ID } from "./entity/field/fieldTypes.ts";
-
 import {
   Database,
   DatabaseConfig,
@@ -18,7 +16,7 @@ import {
   Orm,
 } from "./entity/defineEntityTypes.ts";
 import { RowsResult } from "./database/adapter/databaseAdapter.ts";
-import { ORMField } from "./entity/field/ormField.ts";
+import { FieldTypes, ORMField } from "./entity/field/ormField.ts";
 
 export class DenoOrm<
   D extends DatabaseType,
@@ -85,7 +83,7 @@ export class DenoOrm<
 
   async getEntity<I extends Ids, E extends R[I]>(
     entity: I,
-    id: ID,
+    id: FieldTypes["IDField"],
   ): Promise<EntityFromDef<R[I]>> {
     const entityDef = this.getEntityDef(entity);
     const entityClass = this.getEntityClass(entity as string);
@@ -158,7 +156,7 @@ export class DenoOrm<
     for (const field of entityDef.fields) {
       entityClass.prototype[field.key] = field.defaultValue || null;
     }
-    // entityClass.prototype.orm = orm;
+
     for (const hook in entityDef.hooks) {
       entityClass.prototype[hook].bind(entityClass);
     }

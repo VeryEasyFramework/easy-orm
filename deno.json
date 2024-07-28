@@ -1,9 +1,16 @@
 {
-  "tasks": {
-    "dev": "deno run --allow-all main.ts"
-  },
-  "imports": {
-    "@eveffer/easy-cli": "jsr:@eveffer/easy-cli@^0.1.2",
-    "@eveffer/string-utils": "jsr:@eveffer/string-utils@^0.1.2"
+  "name": "@eveffer/easy-orm",
+  "version": "0.1.0",
+  "exports": "./mod.ts",
+  "publish": {
+    "exclude": [
+      "dev",
+      "database"
+    ],
+    "include": [
+      "mod.ts",
+      "src",
+      "deps.ts"
+    ]
   }
 }

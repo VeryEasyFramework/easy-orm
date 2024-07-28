@@ -1,4 +1,4 @@
-import { ListOptions } from "../database.ts";
+import type { ListOptions } from "../database.ts";
 
 export interface RowsResult<T> {
   rowCount: number;
