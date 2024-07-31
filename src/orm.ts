@@ -1,11 +1,10 @@
 import {
   Database,
   type DatabaseConfig,
-  type DatabaseType,
   type ListOptions,
 } from "#/database/database.ts";
 
-import {
+import type {
   EntityClassConstructor,
   EntityDefFromModel,
   EntityDefinition,
@@ -15,11 +14,11 @@ import {
   ListEntityFromDef,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
-import { RowsResult } from "#/database/adapter/databaseAdapter.ts";
-import { FieldTypes, ORMField } from "#/entity/field/ormField.ts";
+import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
+import type { FieldTypes, ORMField } from "#/entity/field/ormField.ts";
 
 export class DenoOrm<
-  D extends DatabaseType,
+  D extends keyof DatabaseConfig,
   E extends Array<EntityDefinition>,
   R extends {
     [K in E[number] as K["entityId"]]: K;

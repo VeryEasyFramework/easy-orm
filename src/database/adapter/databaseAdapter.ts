@@ -13,18 +13,20 @@ export abstract class DatabaseAdapter<C> {
     this.init();
   }
 
-  abstract init(): Promise<void>;
+  abstract init(): Promise<void> | void;
   abstract connect(): Promise<void>;
 
   abstract disconnect(): Promise<void>;
-
-  abstract query(query: any): Promise<any>;
 
   abstract createTable(tableName: string, fields: any): Promise<void>;
 
   abstract dropTable(tableName: string): Promise<void>;
 
-  abstract insert(tableName: string, data: Record<string, any>): Promise<any>;
+  abstract insert(
+    tableName: string,
+    id: string,
+    data: Record<string, any>,
+  ): Promise<any>;
 
   abstract update(
     tableName: string,

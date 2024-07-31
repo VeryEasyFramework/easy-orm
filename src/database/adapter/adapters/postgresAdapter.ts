@@ -1,5 +1,8 @@
 import type { ListOptions } from "../../database.ts";
-import { DatabaseAdapter, type RowsResult } from "../databaseAdapter.ts";
+import {
+  DatabaseAdapter,
+  type RowsResult,
+} from "#/database/adapter/databaseAdapter.ts";
 import { camelToSnakeCase } from "@eveffer/string-utils";
 import {
   type ClientOptions,
@@ -62,7 +65,11 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async dropTable(tableName: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  async insert(tableName: string, data: Record<string, any>): Promise<any> {
+  async insert(
+    tableName: string,
+    id: string,
+    data: Record<string, any>,
+  ): Promise<any> {
     throw new Error("Method not implemented.");
   }
 

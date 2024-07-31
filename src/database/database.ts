@@ -1,10 +1,12 @@
 import {
+  MemcachedAdapter,
+  MemcachedConfig,
+} from "#/database/adapter/adapters/memcachedAdapter.ts";
+import {
   PostgresAdapter,
   type PostgresConfig,
 } from "./adapter/adapters/postgresAdapter.ts";
-import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
-
-export type DatabaseType = "postgres" | "json";
+import type { RowsResult } from "./adapter/databaseAdapter.ts";
 
 export type ListOptions = {
   filter?: Record<string, any>;
@@ -13,12 +15,25 @@ export type ListOptions = {
   orderBy?: string;
   order?: "asc" | "desc";
 };
-export type DatabaseConfig = {
-  "postgres": PostgresConfig;
-  "json": Record<string, any>;
-};
-export class Database<A extends DatabaseType> {
-  adapter: DatabaseAdapter<DatabaseConfig[A]>;
+export interface DatabaseConfig {
+  postgres: PostgresConfig;
+  memcached: MemcachedConfig;
+  json: Record<string, any>;
+}
+
+export interface AdapterMap {
+  "postgres": PostgresAdapter;
+  "memcached": MemcachedAdapter;
+  "json": any;
+}
+
+type ExtractConfig<A extends keyof DatabaseConfig> = A extends
+  keyof DatabaseConfig ? DatabaseConfig[A] : never;
+
+export class Database<
+  A extends keyof DatabaseConfig,
+> {
+  adapter: AdapterMap[A];
 
   private config: DatabaseConfig[A];
 
@@ -29,8 +44,11 @@ export class Database<A extends DatabaseType> {
     this.config = options.config;
     switch (options.adapter) {
       case "postgres": {
-        const config = options.config as PostgresConfig;
-        this.adapter = new PostgresAdapter(config);
+        this.adapter = new PostgresAdapter(options.config as PostgresConfig);
+        break;
+      }
+      case "memcached": {
+        this.adapter = new MemcachedAdapter(options.config as MemcachedConfig);
         break;
       }
       default:
@@ -47,9 +65,7 @@ export class Database<A extends DatabaseType> {
   async disconnect(): Promise<void> {
     await this.adapter.disconnect();
   }
-  async query(query: string): Promise<any> {
-    return await this.adapter.query(query);
-  }
+
   async createTable(tableName: string, fields: any): Promise<void> {
     await this.adapter.createTable(tableName, fields);
   }

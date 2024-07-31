@@ -249,6 +249,15 @@ const orm = new DenoOrm({
   },
 });
 
+const orm2 = new DenoOrm({
+  databaseType: "memcached",
+  entities: [user],
+  databaseConfig: {
+    port: 11211,
+    poolSize: 10,
+  },
+});
+
 await orm.init();
 
 // // const users = await orm.getEntityList("user");
