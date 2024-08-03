@@ -3,7 +3,7 @@ import {
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
-import { camelToSnakeCase } from "@eveffer/string-utils";
+import { camelToSnakeCase } from "@vef/string-utils";
 import {
   type ClientOptions,
   Pool,

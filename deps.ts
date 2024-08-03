@@ -1,4 +1,4 @@
-export * from "@eveffer/string-utils";
+export * from "@vef/string-utils";
 
 export {
   type ClientOptions,

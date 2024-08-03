@@ -1,5 +1,5 @@
 {
-  "name": "@eveffer/easy-orm",
+  "name": "@vef/easy-orm",
   "version": "0.1.0",
   "exports": "./mod.ts",
   "publish": {
@@ -15,10 +15,9 @@
       "LICENSE"
     ]
   },
-  "importMap": "vendor/import_map.json",
   "imports": {
     "#/": "./src/",
-    "@eveffer/string-utils": "jsr:@eveffer/string-utils@^0.1.2",
+    "@vef/string-utils": "jsr:@vef/string-utils@^0.1.3",
     "deno-postgres": "https://deno.land/x/postgres@v0.19.3/mod.ts"
   }
 }
