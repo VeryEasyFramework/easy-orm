@@ -1,6 +1,6 @@
-import { DatabaseType } from "../database/database.ts";
-import { DenoOrm } from "../orm.ts";
-import { FieldTypes, ORMField } from "./field/ormField.ts";
+import { DatabaseConfig } from "#/database/database.ts";
+import type { DenoOrm } from "../orm.ts";
+import type { FieldTypes, ORMField } from "./field/ormField.ts";
 
 export type EntityActionDef<
   P extends PropertyKey,
@@ -18,7 +18,13 @@ export interface EntityHooks {
   validate(): void;
 }
 
-export type Orm = DenoOrm<DatabaseType, Array<EntityDefinition>, any, any, any>;
+export type Orm = DenoOrm<
+  keyof DatabaseConfig,
+  Array<EntityDefinition>,
+  any,
+  any,
+  any
+>;
 
 export type ExtractEntityFields<F extends ORMField[]> = {
   [K in F[number] as K["key"]]: FieldTypes[K["fieldType"]];
@@ -68,6 +74,12 @@ export type EntityFromDef<T> = T extends
     & BaseFields
     & EntityHooks
     & T["actions"]
+  : never;
+
+export type CreateEntityFromDef<T> = T extends
+  EntityDef<infer Id, infer P, infer F, infer AP, infer A> ? {
+    [K in T["fields"][number] as K["key"]]: FieldTypes[K["fieldType"]];
+  }
   : never;
 
 export type ListEntityFromDef<T> = T extends

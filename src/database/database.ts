@@ -1,12 +1,17 @@
 import {
   MemcachedAdapter,
-  MemcachedConfig,
+  type MemcachedConfig,
 } from "#/database/adapter/adapters/memcachedAdapter.ts";
 import {
   PostgresAdapter,
   type PostgresConfig,
-} from "./adapter/adapters/postgresAdapter.ts";
-import type { RowsResult } from "./adapter/databaseAdapter.ts";
+} from "#/database/adapter/adapters/pgAdapter.ts";
+import {
+  JSONAdapter,
+  JSONConfig,
+} from "#/database/adapter/adapters/jsonAdapter.ts";
+import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
+import { generateRandomString } from "@vef/string-utils";
 
 export type ListOptions = {
   filter?: Record<string, any>;
@@ -18,13 +23,13 @@ export type ListOptions = {
 export interface DatabaseConfig {
   postgres: PostgresConfig;
   memcached: MemcachedConfig;
-  json: Record<string, any>;
+  json: JSONConfig;
 }
 
 export interface AdapterMap {
   "postgres": PostgresAdapter;
   "memcached": MemcachedAdapter;
-  "json": any;
+  "json": JSONAdapter;
 }
 
 type ExtractConfig<A extends keyof DatabaseConfig> = A extends
@@ -33,7 +38,7 @@ type ExtractConfig<A extends keyof DatabaseConfig> = A extends
 export class Database<
   A extends keyof DatabaseConfig,
 > {
-  adapter: AdapterMap[A];
+  adapter: DatabaseAdapter<any>;
 
   private config: DatabaseConfig[A];
 
@@ -49,6 +54,10 @@ export class Database<
       }
       case "memcached": {
         this.adapter = new MemcachedAdapter(options.config as MemcachedConfig);
+        break;
+      }
+      case "json": {
+        this.adapter = new JSONAdapter(options.config as JSONConfig);
         break;
       }
       default:
@@ -73,7 +82,8 @@ export class Database<
     await this.adapter.dropTable(tableName);
   }
   async insertRow<T>(tableName: string, data: Record<string, any>): Promise<T> {
-    return await this.adapter.insert(tableName, data);
+    const id = generateRandomString(16);
+    return await this.adapter.insert(tableName, id, data);
   }
   async updateRow<T>(
     tableName: string,

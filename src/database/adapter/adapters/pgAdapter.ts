@@ -4,30 +4,23 @@ import {
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
 import { camelToSnakeCase } from "@vef/string-utils";
-import {
-  type ClientOptions,
-  Pool,
-  type QueryObjectOptions,
-  type QueryObjectResult,
-} from "../../../../deps.ts";
+import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
+import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 
 export interface PostgresConfig {
-  connection_params: ClientOptions;
+  clientOptions: PgClientConfig;
   size: number;
   lazy?: boolean;
   camelCase?: boolean;
 }
 export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
-  private pool!: Pool;
+  private pool!: PostgresPool;
   camelCase: boolean = false;
 
-  async init() {
+  async init(): Promise<void> {
     const config = this.config;
-    const params = config.connection_params;
-    const size = config.size;
-    const lazy = config.lazy || false;
     this.camelCase = config.camelCase || false;
-    this.pool = new Pool(params, size, lazy);
+    this.pool = new PostgresPool(this.config);
     await this.pool.initialized();
   }
   update(
@@ -46,19 +39,19 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async disconnect(): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  async query<T>(query: QueryObjectOptions): Promise<QueryObjectResult<T>> {
-    using client = await this.pool.connect();
-    const result = await client.queryObject<T>({
-      ...query,
-      camelCase: this.camelCase,
+  async query<T>(query: string): Promise<RowsResult<T>> {
+    const result = await this.pool.query<T>(query);
+    const columns = result.columns.map((column) => {
+      return this.camelCase ? column.camelName : column.name;
     });
-    return result;
+
+    return {
+      rowCount: result.rowCount,
+      data: result.rows,
+      columns: columns,
+    };
   }
-  async queryRaw(query: string): Promise<any> {
-    using client = await this.pool.connect();
-    const result = await client.queryArray(query);
-    return result;
-  }
+
   async createTable(tableName: string, fields: any): Promise<void> {
     throw new Error("Method not implemented.");
   }
@@ -84,27 +77,16 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         query += ` WHERE ${key} = ${value}`;
       }
     }
-    const result = await this.query<T>({
-      text: query,
-    });
-    // const result = await this.queryRaw(query);
-    const output = {
-      rowCount: result.rowCount || 0,
-      data: result.rows,
-      columns: result.columns || [],
-    };
-    return output;
+    const result = await this.query<T>(query);
+
+    return result;
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
-    // select 1 row from table where field = value
-    const query = `SELECT * FROM ${tableName} WHERE ${field} = $1`;
-    const result = await this.query<T>({
-      text: query,
-      args: [value],
-    });
+    const query = `SELECT * FROM ${tableName} WHERE ${field} = ${value}`;
+    const result = await this.query<T>(query);
     if (result.rowCount === 0) {
       throw new Error("Row not found");
     }
-    return result.rows[0];
+    return result.data[0];
   }
 }

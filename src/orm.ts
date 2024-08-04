@@ -5,6 +5,7 @@ import {
 } from "#/database/database.ts";
 
 import type {
+  CreateEntityFromDef,
   EntityClassConstructor,
   EntityDefFromModel,
   EntityDefinition,
@@ -95,21 +96,33 @@ export class DenoOrm<
     return entityInstance as EntityFromDef<R[I]>;
   }
 
-  createEntity<I extends Ids>(
+  async createEntity<I extends Ids>(
     entity: I,
-    data: D,
-  ): EntityFromDef<R[I]> {
-    return {} as EntityFromDef<R[I]>;
+    data: Partial<CreateEntityFromDef<R[I]>>,
+  ): Promise<EntityFromDef<R[I]>> {
+    return await this.database.insertRow(
+      this.getEntityDef(entity).tableName,
+      data,
+    );
   }
 
-  updateEntity<I extends Ids>(
+  async updateEntity<I extends Ids>(
     entity: I,
     id: string,
-    data: Record<string, any>,
-  ): EntityFromDef<R[I]> {
-    return {} as EntityFromDef<R[I]>;
+    data: Partial<CreateEntityFromDef<R[I]>>,
+  ): Promise<EntityFromDef<R[I]>> {
+    return await this.database.updateRow(
+      this.getEntityDef(entity).tableName,
+      id,
+      data,
+    );
   }
-  deleteEntity<I extends Ids>(entity: I, id: string): boolean {
+  async deleteEntity<I extends Ids>(entity: I, id: string): Promise<boolean> {
+    await this.database.deleteRow(
+      this.getEntityDef(entity).tableName,
+      "id",
+      id,
+    );
     return true;
   }
 

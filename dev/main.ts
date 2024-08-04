@@ -227,49 +227,66 @@ const campaign = defineEntity("campaign", {
   },
 });
 
+// const orm = new DenoOrm({
+//   entities: [user, campaign],
+//   databaseType: "postgres",
+//   databaseConfig: {
+//     size: 1,
+//     lazy: true,
+//     camelCase: true,
+//     clientOptions: {
+//       user: "eliveffer",
+//       // password: "uniueq23",
+//       database: "verax",
+//       unixPath: "/var/run/postgresql/.s.PGSQL.5432",
+//       // host: "localhost",
+//       // port: 5432,
+//     },
+//   },
+// });
+
+// const orm = new DenoOrm({
+//   databaseType: "memcached",
+//   entities: [user],
+//   databaseConfig: {
+//     port: 11211,
+//     poolSize: 10,
+//   },
+// });
 const orm = new DenoOrm({
-  entities: [user, campaign],
-  databaseType: "postgres",
-  databaseConfig: {
-    size: 10,
-    lazy: true,
-    camelCase: true,
-    connection_params: {
-      user: "eliveffer",
-      password: "uniueq23",
-      applicationName: "deno-orm",
-      tls: {
-        enabled: false,
-      },
-      database: "verax",
-
-      host_type: "tcp",
-      port: 5432,
-    },
-  },
-});
-
-const orm2 = new DenoOrm({
-  databaseType: "memcached",
+  databaseType: "json",
   entities: [user],
   databaseConfig: {
-    port: 11211,
-    poolSize: 10,
+    dataPath: "./data",
   },
 });
 
 await orm.init();
 
-// // const users = await orm.getEntityList("user");
+// await orm.createEntity("user", {
+//   name: "John Smith",
+//   isActive: true,
+// });
+
+await orm.updateEntity("user", "K7PEoqprvZItewBn", {
+  isActive: false,
+});
+
+const userj = await orm.getEntity("user", "K7PEoqprvZItewBn");
+
+console.log(userj);
+const users = await orm.getEntityList("user");
+
+console.log(users);
 // const campaigns = await orm.getEntityList("campaign", {
 //   filter: {
 //     isLive: true,
 //   },
 // });
-const camp = await orm.getEntity("campaign", "3876");
-const camp2 = await orm.getEntity("campaign", "3877");
-const res = await camp.sendEmail("john@smith.com");
-await camp2.sendEmail("jane@fmailcom");
+// const camp = await orm.getEntity("campaign", "3876");
+// const camp2 = await orm.getEntity("campaign", "3877");
+// const res = await camp.sendEmail("john@smith.com");
+// await camp2.sendEmail("jane@fmailcom");
 // const { rowCount, columns, data } = campaigns;
 // console.log(rowCount);
 // console.log(columns);
