@@ -18,7 +18,7 @@ import type {
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
 import type { FieldTypes, ORMField } from "#/entity/field/ormField.ts";
 
-export class DenoOrm<
+export class EasyOrm<
   D extends keyof DatabaseConfig,
   E extends Array<EntityDefinition>,
   R extends {

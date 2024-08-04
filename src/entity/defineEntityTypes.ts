@@ -1,5 +1,5 @@
 import { DatabaseConfig } from "#/database/database.ts";
-import type { DenoOrm } from "../orm.ts";
+import type { EasyOrm } from "../orm.ts";
 import type { FieldTypes, ORMField } from "./field/ormField.ts";
 
 export type EntityActionDef<
@@ -18,7 +18,7 @@ export interface EntityHooks {
   validate(): void;
 }
 
-export type Orm = DenoOrm<
+export type Orm = EasyOrm<
   keyof DatabaseConfig,
   Array<EntityDefinition>,
   any,

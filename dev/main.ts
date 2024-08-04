@@ -1,5 +1,5 @@
 import { defineEntity } from "../src/entity/defineEntity.ts";
-import { DenoOrm } from "../src/orm.ts";
+import { EasyOrm } from "../src/orm.ts";
 
 // "id",
 // "password",
@@ -86,7 +86,7 @@ const user = defineEntity("user", {
 //     poolSize: 10,
 //   },
 // });
-const orm = new DenoOrm({
+const orm = new EasyOrm({
   databaseType: "json",
   entities: [user],
   databaseConfig: {
