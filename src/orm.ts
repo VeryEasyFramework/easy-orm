@@ -100,9 +100,14 @@ export class DenoOrm<
     entity: I,
     data: Partial<CreateEntityFromDef<R[I]>>,
   ): Promise<EntityFromDef<R[I]>> {
+    const createdAt = new Date();
+    const entityDef = this.getEntityDef(entity);
+    const createData = data as EntityFromDef<R[I]>;
+    createData.createdAt = createdAt;
+    createData.updatedAt = createdAt;
     return await this.database.insertRow(
-      this.getEntityDef(entity).tableName,
-      data,
+      entityDef.tableName,
+      createData,
     );
   }
 
@@ -111,10 +116,14 @@ export class DenoOrm<
     id: string,
     data: Partial<CreateEntityFromDef<R[I]>>,
   ): Promise<EntityFromDef<R[I]>> {
+    const entityDef = this.getEntityDef(entity);
+    const updateData = data as EntityFromDef<R[I]>;
+    updateData.updatedAt = new Date();
+
     return await this.database.updateRow(
-      this.getEntityDef(entity).tableName,
+      entityDef.tableName,
       id,
-      data,
+      updateData,
     );
   }
   async deleteEntity<I extends Ids>(entity: I, id: string): Promise<boolean> {
