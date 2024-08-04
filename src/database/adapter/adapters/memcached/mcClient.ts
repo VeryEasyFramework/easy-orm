@@ -1,5 +1,5 @@
-import { MemcacheParser } from "./memcacheParser.ts";
-import type { ClientConfig, GetFlagMap, GetOptions } from "./memcacheTypes.ts";
+import { MemcacheParser } from "./mcParser.ts";
+import type { ClientConfig, GetFlagMap, GetOptions } from "./mcTypes.ts";
 
 const getFlagMap: GetFlagMap = {
   base64: "b", // interpret key as base64 encoded binary value

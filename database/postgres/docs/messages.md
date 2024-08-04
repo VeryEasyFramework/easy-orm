@@ -1,4 +1,0 @@
-## StartupMessage (F)
-
-### Responses
-

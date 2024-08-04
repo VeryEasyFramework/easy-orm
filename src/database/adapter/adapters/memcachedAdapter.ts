@@ -3,8 +3,8 @@ import {
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
 import type { ListOptions } from "#/database/database.ts";
-import { MemcachePool } from "../../../../database/memcache/memcachePool.ts";
-import type { PoolConfig } from "../../../../database/memcache/memcacheTypes.ts";
+import { MemcachePool } from "./memcached/mcPool.ts";
+import type { PoolConfig } from "./memcached/mcTypes.ts";
 {
 }
 export interface MemcachedConfig extends PoolConfig {

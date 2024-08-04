@@ -1,4 +1,4 @@
-import { MemcacheError } from "./memcacheError.ts";
+import { MemcacheError } from "./mcError.ts";
 
 /**
  * Memcache protocol parser

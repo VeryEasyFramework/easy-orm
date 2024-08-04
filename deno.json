@@ -20,6 +20,7 @@
   },
   "imports": {
     "#/": "./src/",
+    "@vef/deno-memcached": "jsr:@vef/deno-memcached@^0.1.1",
     "@vef/string-utils": "jsr:@vef/string-utils@^0.1.3",
     "deno-postgres": "https://deno.land/x/postgres@v0.19.3/mod.ts"
   }
