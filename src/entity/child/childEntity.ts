@@ -1,22 +1,18 @@
-import { ORMField } from "../field/ormField.ts";
-import { DATE_TIME, ID } from "../field/fieldTypes.ts";
+import type { ORMField } from "#/entity/field/ormField.ts";
 
+import type { BaseFields } from "#/entity/defineEntityTypes.ts";
 export abstract class ChildEntityModel {
-    abstract parentEntityModel: string;
-    abstract parentEntityID: string;
-    abstract parentFieldKey: string;
+  abstract parentEntityModel: string;
+  abstract parentEntityID: string;
+  abstract parentFieldKey: string;
 
-    abstract childId: string;
-    abstract label: string;
-    abstract fields: ORMField[];
+  abstract childId: string;
+  abstract label: string;
+  abstract fields: ORMField[];
 }
 
 export type ChildEntity<M extends ChildEntityModel> =
-    & {
-        [K in M["fields"][number]["key"]]: M["fields"][number]["fieldType"];
-    }
-    & {
-        id: ID;
-        created_at: DATE_TIME | string;
-        updated_at: DATE_TIME | string;
-    };
+  & {
+    [K in M["fields"][number]["key"]]: M["fields"][number]["fieldType"];
+  }
+  & BaseFields;

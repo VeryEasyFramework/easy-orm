@@ -1,6 +1,7 @@
 import { DatabaseConfig } from "#/database/database.ts";
 import type { DenoOrm } from "../orm.ts";
-import type { FieldTypes, ORMField } from "./field/ormField.ts";
+import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type { ORMField } from "./field/ormField.ts";
 
 export type EntityActionDef<
   P extends PropertyKey,
@@ -27,7 +28,7 @@ export type Orm = DenoOrm<
 >;
 
 export type ExtractEntityFields<F extends ORMField[]> = {
-  [K in F[number] as K["key"]]: FieldTypes[K["fieldType"]];
+  [K in F[number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
 };
 
 export type EntityDef<
@@ -61,15 +62,15 @@ export type EntityDefFromModel<M> = M extends
   ? EntityDef<Id, P, F, AP, A>
   : never;
 
-interface BaseFields {
-  id: FieldTypes["IDField"];
-  createdAt: FieldTypes["DateField"];
-  updatedAt: FieldTypes["DateField"];
+export interface BaseFields {
+  id: EasyFieldTypeMap["IDField"];
+  createdAt: EasyFieldTypeMap["DateField"];
+  updatedAt: EasyFieldTypeMap["DateField"];
 }
 export type EntityFromDef<T> = T extends
   EntityDef<infer Id, infer P, infer F, infer AP, infer A> ?
     & {
-      [K in T["fields"][number] as K["key"]]: FieldTypes[K["fieldType"]];
+      [K in T["fields"][number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
     }
     & BaseFields
     & EntityHooks
@@ -78,14 +79,14 @@ export type EntityFromDef<T> = T extends
 
 export type CreateEntityFromDef<T> = T extends
   EntityDef<infer Id, infer P, infer F, infer AP, infer A> ? {
-    [K in T["fields"][number] as K["key"]]: FieldTypes[K["fieldType"]];
+    [K in T["fields"][number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
   }
   : never;
 
 export type ListEntityFromDef<T> = T extends
   EntityDef<infer Id, infer P, infer F, infer AP, infer A> ?
     & {
-      [K in T["fields"][number] as K["key"]]: FieldTypes[K["fieldType"]];
+      [K in T["fields"][number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
     }
     & BaseFields
   : never;

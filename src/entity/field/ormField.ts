@@ -1,32 +1,29 @@
-export interface FieldTypes {
-    IDField: string;
-    DataField: string;
-    IntField: number;
-    BigIntField: bigint;
-    DateField: Date;
-    BooleanField: boolean;
-    PasswordField: string;
-    ChoicesField: string;
-    MultiChoiceField: string[];
-}
+import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 
-export type ExtractFieldType<T> = T extends keyof FieldTypes ? FieldTypes[T]
-    : never;
+export type ExtractFieldType<T> = T extends keyof EasyFieldTypeMap
+  ? EasyFieldTypeMap[T]
+  : never;
 
 export type ExtractFieldKey<T> = T extends ORMField ? T["key"] : never;
-export interface ORMField<P extends PropertyKey = PropertyKey> {
-    key: P;
-    label: string;
-    description?: string;
-    fieldType: keyof FieldTypes;
-    choices?: string[];
-    required?: boolean;
-    defaultValue?: ExtractFieldType<keyof FieldTypes>;
+export interface ORMField<
+  P extends PropertyKey = PropertyKey,
+  T extends keyof EasyFieldTypeMap = "DataField",
+> {
+  key: P;
+  label: string;
+  description?: string;
+  fieldType: T;
+  choices?: string[];
+  required?: boolean;
+  readOnly?: boolean;
+  linkedEntity?: string;
+  linkedEntityLabel?: string[];
+  defaultValue?: ExtractFieldType<T>;
 }
 
 export interface Currency {
-    symbol: string;
-    name: string;
-    code: string;
-    decimals: number;
+  symbol: string;
+  name: string;
+  code: string;
+  decimals: number;
 }

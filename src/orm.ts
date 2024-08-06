@@ -16,7 +16,7 @@ import type {
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
-import type { FieldTypes, ORMField } from "#/entity/field/ormField.ts";
+import type { EasyFieldTypeMap, ORMField } from "#/entity/field/ormField.ts";
 
 export class DenoOrm<
   D extends keyof DatabaseConfig,
@@ -83,7 +83,7 @@ export class DenoOrm<
 
   async getEntity<I extends Ids, E extends R[I]>(
     entity: I,
-    id: FieldTypes["IDField"],
+    id: EasyFieldTypeMap["IDField"],
   ): Promise<EntityFromDef<R[I]>> {
     const entityDef = this.getEntityDef(entity);
     const entityClass = this.getEntityClass(entity as string);
