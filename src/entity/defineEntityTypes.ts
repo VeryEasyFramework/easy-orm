@@ -1,7 +1,7 @@
 import { DatabaseConfig } from "#/database/database.ts";
-import type { DenoOrm } from "../orm.ts";
 import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 import type { ORMField } from "./field/ormField.ts";
+import type { EasyOrm } from "../orm.ts";
 
 export type EntityActionDef<
   P extends PropertyKey,
@@ -19,7 +19,7 @@ export interface EntityHooks {
   validate(): void;
 }
 
-export type Orm = DenoOrm<
+export type Orm = EasyOrm<
   keyof DatabaseConfig,
   Array<EntityDefinition>,
   any,

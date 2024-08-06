@@ -1,5 +1,5 @@
 import { defineEntity } from "../src/entity/defineEntity.ts";
-import { DenoOrm } from "../src/orm.ts";
+import { EasyOrm } from "../src/orm.ts";
 
 // "id",
 // "password",
@@ -60,173 +60,6 @@ const user = defineEntity("user", {
   },
 });
 
-const campaign = defineEntity("campaign", {
-  tableName: "campaigns_campaign",
-  fields: [
-    {
-      key: "legacyCampaignId",
-      label: "Legacy Campaign ID",
-      fieldType: "BigIntField",
-    },
-    {
-      key: "legacyFeedId",
-      label: "Legacy Feed ID",
-      fieldType: "BigIntField",
-    },
-    {
-      key: "subIds",
-      label: "Sub IDs",
-      fieldType: "DataField",
-    },
-    {
-      key: "channel",
-      label: "Channel",
-      fieldType: "DataField",
-    },
-    {
-      key: "revenueShare",
-      label: "Revenue Share",
-      fieldType: "DataField",
-    },
-    {
-      key: "isLive",
-      label: "Is Live",
-      fieldType: "BooleanField",
-    },
-    {
-      key: "emails",
-      label: "Emails",
-      fieldType: "DataField",
-    },
-    {
-      key: "launchedAt",
-      label: "Launched At",
-      fieldType: "DateField",
-    },
-    {
-      key: "stoppedAt",
-      label: "Stopped At",
-      fieldType: "DateField",
-    },
-    {
-      key: "notes",
-      label: "Notes",
-      fieldType: "DataField",
-    },
-    {
-      key: "providerId",
-      label: "Provider ID",
-      fieldType: "DataField",
-    },
-    {
-      key: "publisherId",
-      label: "Publisher ID",
-      fieldType: "DataField",
-    },
-    {
-      key: "feedTagId",
-      label: "Feed Tag ID",
-      fieldType: "DataField",
-    },
-    {
-      key: "lastEmailSentAt",
-      label: "Last Email Sent At",
-      fieldType: "DateField",
-    },
-    {
-      key: "sendEmails",
-      label: "Send Emails",
-      fieldType: "DataField",
-    },
-    {
-      key: "statsSentUntil",
-      label: "Stats Sent Until",
-      fieldType: "DataField",
-    },
-    {
-      key: "direct",
-      label: "Direct",
-      fieldType: "DataField",
-    },
-    {
-      key: "notifiedPublisher",
-      label: "Notified Publisher",
-      fieldType: "BooleanField",
-    },
-    {
-      key: "notifiedPublisherAt",
-      label: "Notified Publisher At",
-      fieldType: "DateField",
-    },
-    {
-      key: "alertMetricsStartDate",
-      label: "Alert Metrics Start Date",
-      fieldType: "DateField",
-    },
-    {
-      key: "alertMetricsLastEndDate",
-      label: "Alert Metrics Last End Date",
-      fieldType: "DateField",
-    },
-    {
-      key: "alertMetricsLastStartDate",
-      label: "Alert Metrics Last Start Date",
-      fieldType: "DateField",
-    },
-    {
-      key: "createdById",
-      label: "Created By ID",
-      fieldType: "DataField",
-    },
-    {
-      key: "pubNotes",
-      label: "Pub Notes",
-      fieldType: "DataField",
-    },
-    {
-      key: "searchCap",
-      label: "Search Cap",
-      fieldType: "DataField",
-    },
-    {
-      key: "updatedById",
-      label: "Updated By ID",
-      fieldType: "DataField",
-    },
-    {
-      key: "wrappedUrl",
-      label: "Wrapped URL",
-      fieldType: "DataField",
-    },
-    {
-      key: "statusId",
-      label: "Status ID",
-      fieldType: "DataField",
-    },
-    {
-      key: "statusReasonId",
-      label: "Status Reason ID",
-      fieldType: "DataField",
-    },
-    {
-      key: "campaignType",
-      label: "Campaign Type",
-      fieldType: "DataField",
-    },
-  ],
-  label: "Campaign",
-  hooks: {
-    async beforeSave() {
-    },
-  },
-  actions: {
-    async sendEmail(email: string) {
-      console.log(`Sending email to ${email}`);
-      console.log(this.emails);
-    },
-  },
-});
-
 // const orm = new DenoOrm({
 //   entities: [user, campaign],
 //   databaseType: "postgres",
@@ -253,7 +86,7 @@ const campaign = defineEntity("campaign", {
 //     poolSize: 10,
 //   },
 // });
-const orm = new DenoOrm({
+const orm = new EasyOrm({
   databaseType: "json",
   entities: [user],
   databaseConfig: {
@@ -263,18 +96,18 @@ const orm = new DenoOrm({
 
 await orm.init();
 
-// await orm.createEntity("user", {
-//   name: "John Smith",
-//   isActive: true,
-// });
-
-await orm.updateEntity("user", "K7PEoqprvZItewBn", {
-  isActive: false,
+await orm.createEntity("user", {
+  name: "John Smith",
+  isActive: true,
 });
 
-const userj = await orm.getEntity("user", "K7PEoqprvZItewBn");
+// await orm.updateEntity("user", "K7PEoqprvZItewBn", {
+//   isActive: false,
+// });
 
-console.log(userj);
+// const userj = await orm.getEntity("user", "K7PEoqprvZItewBn");
+
+// console.log(userj);
 const users = await orm.getEntityList("user");
 
 console.log(users);
