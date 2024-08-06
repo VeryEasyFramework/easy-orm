@@ -68,6 +68,7 @@ export class PostgresClient {
     if (this.connected) {
       return;
     }
+
     const options = {
       host: this.connectionParams.host,
       port: this.connectionParams.port,

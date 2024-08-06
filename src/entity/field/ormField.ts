@@ -7,18 +7,17 @@ export type ExtractFieldType<T> = T extends keyof EasyFieldTypeMap
 export type ExtractFieldKey<T> = T extends ORMField ? T["key"] : never;
 export interface ORMField<
   P extends PropertyKey = PropertyKey,
-  T extends keyof EasyFieldTypeMap = "DataField",
 > {
   key: P;
   label: string;
   description?: string;
-  fieldType: T;
+  fieldType: keyof EasyFieldTypeMap;
   choices?: string[];
   required?: boolean;
   readOnly?: boolean;
   linkedEntity?: string;
   linkedEntityLabel?: string[];
-  defaultValue?: ExtractFieldType<T>;
+  defaultValue?: ExtractFieldType<keyof EasyFieldTypeMap>;
 }
 
 export interface Currency {

@@ -60,23 +60,23 @@ const user = defineEntity("user", {
   },
 });
 
-// const orm = new DenoOrm({
-//   entities: [user, campaign],
-//   databaseType: "postgres",
-//   databaseConfig: {
-//     size: 1,
-//     lazy: true,
-//     camelCase: true,
-//     clientOptions: {
-//       user: "eliveffer",
-//       // password: "uniueq23",
-//       database: "verax",
-//       unixPath: "/var/run/postgresql/.s.PGSQL.5432",
-//       // host: "localhost",
-//       // port: 5432,
-//     },
-//   },
-// });
+const orm = new EasyOrm({
+  entities: [user],
+  databaseType: "postgres",
+  databaseConfig: {
+    size: 1,
+    lazy: true,
+    camelCase: true,
+    clientOptions: {
+      user: "eliveffer",
+      // password: "uniueq23",
+      database: "verax",
+      unixPath: "/var/run/postgresql/.s.PGSQL.5432",
+      // host: "localhost",
+      // port: 5432,
+    },
+  },
+});
 
 // const orm = new DenoOrm({
 //   databaseType: "memcached",
@@ -86,13 +86,13 @@ const user = defineEntity("user", {
 //     poolSize: 10,
 //   },
 // });
-const orm = new EasyOrm({
-  databaseType: "json",
-  entities: [user],
-  databaseConfig: {
-    dataPath: "./data",
-  },
-});
+// const orm = new EasyOrm({
+//   databaseType: "json",
+//   entities: [user],
+//   databaseConfig: {
+//     dataPath: "./data",
+//   },
+// });
 
 await orm.init();
 

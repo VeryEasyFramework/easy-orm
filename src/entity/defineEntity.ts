@@ -1,4 +1,4 @@
-import { type ORMField } from "./field/ormField.ts";
+import type { ORMField } from "#/entity/field/ormField.ts";
 import type {
   EntityConfig,
   EntityDef,

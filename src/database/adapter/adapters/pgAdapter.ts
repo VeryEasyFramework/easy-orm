@@ -23,16 +23,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     this.pool = new PostgresPool(this.config);
     await this.pool.initialized();
   }
-  update(
-    tableName: string,
-    id: any,
-    fields: Record<string, any>,
-  ): Promise<any> {
-    throw new Error("Method not implemented.");
-  }
-  delete(tableName: string, field: string, value: any): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
+
   async connect(): Promise<void> {
     throw new Error("Method not implemented.");
   }
@@ -63,9 +54,42 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     id: string,
     data: Record<string, any>,
   ): Promise<any> {
-    throw new Error("Method not implemented.");
+    const columns = Object.keys(data).map((key) => camelToSnakeCase(key));
+    const values = Object.values(data).map((value) => {
+      if (typeof value === "string") {
+        return `'${value}'`;
+      }
+      return value;
+    });
+    const query = `INSERT INTO ${tableName} (${
+      columns.join(
+        ", ",
+      )
+    }) VALUES (${values.join(", ")})`;
+    const result = await this.query(query);
+    return result;
   }
 
+  async delete(tableName: string, field: string, value: any): Promise<void> {
+    const query = `DELETE FROM ${tableName} WHERE ${field} = ${value}`;
+    await this.query(query);
+  }
+  async update(
+    tableName: string,
+    id: string,
+    fields: Record<string, any>,
+  ): Promise<any> {
+    const query = `UPDATE ${tableName} SET ${
+      Object.entries(fields)
+        .map(([key, value]) => {
+          key = camelToSnakeCase(key);
+          return `${key} = ${value}`;
+        })
+        .join(", ")
+    } WHERE id = ${id}`;
+    const result = await this.query(query);
+    return result;
+  }
   async getRows<T>(
     tableName: string,
     options?: ListOptions,
