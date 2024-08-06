@@ -16,7 +16,8 @@ import type {
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
-import type { EasyFieldTypeMap, ORMField } from "#/entity/field/ormField.ts";
+import type { ORMField } from "#/entity/field/ormField.ts";
+import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 
 export class EasyOrm<
   D extends keyof DatabaseConfig,

@@ -8,7 +8,7 @@ import {
 } from "#/database/adapter/adapters/pgAdapter.ts";
 import {
   JSONAdapter,
-  JSONConfig,
+  type JSONConfig,
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
 import { generateRandomString } from "@vef/string-utils";

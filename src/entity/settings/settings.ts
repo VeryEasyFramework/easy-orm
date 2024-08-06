@@ -1,14 +1,14 @@
-import { ORMField } from "../field/ormField.ts";
-import { DATA, DATE_TIME, ID } from "../field/fieldTypes.ts";
+import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type { ORMField } from "../field/ormField.ts";
 
 export interface SettingsMeta {
-    settings: string;
-    fields: ORMField[];
+  settings: string;
+  fields: ORMField[];
 }
 
 export interface Settings {
-    id: ID;
-    created_at: DATE_TIME | string;
-    updated_at: DATE_TIME | string;
-    label: DATA;
+  id: EasyFieldTypeMap["IDField"];
+  created_at: EasyFieldTypeMap["DateField"];
+  updated_at: EasyFieldTypeMap["DateField"];
+  label: EasyFieldTypeMap["DataField"];
 }

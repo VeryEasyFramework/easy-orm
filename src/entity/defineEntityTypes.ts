@@ -1,5 +1,5 @@
-import { DatabaseConfig } from "#/database/database.ts";
-import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type { DatabaseConfig } from "#/database/database.ts";
+import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 import type { ORMField } from "./field/ormField.ts";
 import type { EasyOrm } from "../orm.ts";
 
