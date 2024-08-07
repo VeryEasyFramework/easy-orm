@@ -32,6 +32,7 @@ export class EasyOrm<
 > {
   private entities: R = {} as R;
   private entityClasses: C = {} as C;
+  private initialized: boolean = false;
 
   private database: Database<D>;
   constructor(options: {
@@ -45,11 +46,7 @@ export class EasyOrm<
     });
 
     for (const entity of options.entities) {
-      this.entities[entity.entityId as keyof R] = entity as R[keyof R];
-      this.entityClasses[entity.entityId as keyof C] = this.createEntityClass(
-        entity,
-        this,
-      ) as C[keyof C];
+      this.addEntity(entity);
     }
   }
 
@@ -71,10 +68,20 @@ export class EasyOrm<
     return entityClass;
   }
   async init() {
-    console.log("Initializing...");
     await this.database.init();
+    this.initialized = true;
   }
 
+  addEntity(entity: EntityDefinition) {
+    if (this.initialized) {
+      throw new Error("Cannot add entities after initialization");
+    }
+    this.entities[entity.entityId as keyof R] = entity as R[keyof R];
+    this.entityClasses[entity.entityId as keyof C] = this.createEntityClass(
+      entity,
+      this,
+    ) as C[keyof C];
+  }
   migrate() {
     console.log("Migrating...");
   }
