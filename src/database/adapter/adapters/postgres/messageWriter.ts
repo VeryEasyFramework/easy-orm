@@ -62,6 +62,14 @@ export class MessageWriter {
     this.buffer[this.offset++] = 0; // null terminator
     return this;
   }
+  addString(string: string) {
+    const encodedStr = this.encode(string);
+    this.ensure(encodedStr.byteLength);
+    this.copy(encodedStr, this.buffer, this.offset);
+    this.offset += encodedStr.byteLength;
+
+    return this;
+  }
 
   addInt32(num: number) {
     this.ensure(4);

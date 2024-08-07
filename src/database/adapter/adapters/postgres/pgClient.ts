@@ -18,6 +18,8 @@ import {
   getDataType,
   statusMap,
 } from "#/database/adapter/adapters/postgres/maps/maps.ts";
+import { AUTH } from "#/database/adapter/adapters/postgres/pgAuth.ts";
+import { ScramClient } from "#/database/adapter/adapters/postgres/scram.ts";
 
 export class PostgresClient {
   private conn!: Deno.Conn;
@@ -78,7 +80,6 @@ export class PostgresClient {
       if (options.host || options.port) {
         throw new Error("Cannot use both unixPath and host/port");
       }
-      console.log(`Connecting to ${options.unixPath}`);
       this.conn = await Deno.connect({
         path: options.unixPath,
         transport: "unix",
@@ -89,12 +90,10 @@ export class PostgresClient {
       if (options?.unixPath) {
         throw new Error("Cannot use both unixPath and host/port");
       }
-      console.log(`Connecting to ${options.host}:${options.port}`);
       this.conn = await Deno.connect({
         port: options?.port || 5432,
         hostname: options?.host || "localhost",
       });
-      console.log("Connected to Postgres");
     }
 
     this.reader = new MessageReader(this.conn);
@@ -119,75 +118,65 @@ export class PostgresClient {
     // const data = await reader(this.conn)
     // messageParser(data)
     // return
-
+    const client = new ScramClient(
+      this.connectionParams.user,
+      this.connectionParams.password as string,
+    );
     while (this.status !== "connected") {
       await this.reader.nextMessage();
       switch (this.reader.messageType) {
         case "R": {
-          const authTypeMap = {
-            0: "AuthenticationOk",
-            3: "AuthenticationCleartextPassword",
-            5: "AuthenticationMD5Password",
-            10: "AuthenticationSASL",
-            11: "AuthenticationSASLContinue",
-            12: "AuthenticationSASLFinal",
-          };
           const authType = this.reader.readInt32();
-          console.log({ authType });
+
           switch (authType) {
-            case 0: {
+            case AUTH.NO_AUTHENTICATION: {
               break;
             }
-            case 3: {
+            case AUTH.CLEAR_TEXT: {
               const password = this.connectionParams.password;
               this.writer.setMessageType("p");
               this.writer.addCString(password);
               await this.conn.write(this.writer.message);
               break;
             }
-            case 5: {
+            case AUTH.MD5: {
               throw new Error("MD5 authentication not implemented");
-              const salt = this.reader.readBytes(4);
+
               //  md5 authentication
               break;
             }
-            case 10: {
-              throw new Error("SASL authentication not implemented");
-              const saslMechanism = this.reader.readCString();
-              const password = this.connectionParams.password as string;
-              console.log({ saslMechanism });
-              if (saslMechanism === "SCRAM-SHA-256") {
-                console.log("SCRAM-SHA-256");
-                this.writer.setMessageType("p");
-                this.writer.addCString("SCRAM-SHA-256");
-                this.writer.addNegativeOne();
-
-                await this.conn.write(this.writer.message);
-              }
-
-              break;
-            }
-            case 11: {
-              // get the length of the message from the server
-
-              const length = this.reader.messageLength - 4;
-
-              const message = this.reader.readAllBytes();
-              console.log({ message });
-
+            case AUTH.SASL_STARTUP: {
+              const clientFirstMessage = client.composeChallenge();
+              this.writer.reset();
               this.writer.setMessageType("p");
-              const password = this.connectionParams.password as string;
-
-              // SCRAM-SHA-256 authentication
-
-              this.writer.addCString(password);
+              this.writer.addCString("SCRAM-SHA-256");
+              this.writer.addInt32(clientFirstMessage.length);
+              this.writer.addString(clientFirstMessage);
 
               await this.conn.write(this.writer.message);
 
               break;
             }
+            case AUTH.SASL_CONTINUE: {
+              const utf8Decoder = new TextDecoder("utf-8");
+              const message = this.reader.readAllBytes();
+
+              await client.receiveChallenge(utf8Decoder.decode(message));
+              const clientFinalMessage = await client.composeResponse();
+              this.writer.reset();
+              this.writer.setMessageType("p");
+              this.writer.addString(clientFinalMessage);
+              await this.conn.write(this.writer.message);
+
+              break;
+            }
+            case AUTH.SASL_FINAL: {
+              const message = this.reader.readAllBytes();
+
+              await client.receiveResponse(this.decode(message));
+              break;
+            }
             default: {
-              console.log({ authType });
               throw new Error("Unknown authentication type");
             }
           }
@@ -230,9 +219,6 @@ export class PostgresClient {
     }
   }
 
-  private async read() {
-  }
-
   private readError() {
     const errorFields: Record<string, any> = {};
     let offset = 0;
@@ -251,7 +237,6 @@ export class PostgresClient {
         break;
       }
     }
-    console.log({ errorFields });
     errorFields["name"] = pgErrorMap[
       errorFields["code"] as keyof typeof pgErrorMap
     ];
@@ -287,7 +272,6 @@ export class PostgresClient {
   async query<T>(
     query: string,
   ): Promise<QueryResponse<T>> {
-    console.log({ query });
     const writer = this.writer;
     writer.setMessageType("Q");
     writer.addCString(query);
@@ -349,19 +333,4 @@ export class PostgresClient {
     };
     return result;
   }
-}
-
-if (import.meta.main) {
-  const client = new PostgresClient({
-    database: "irl",
-    unixPath: "/var/run/postgresql/.s.PGSQL.5432",
-    user: "eliveffer",
-    options: {
-      "client_encoding": "UTF8",
-      "application_name": "deno-postgres",
-    },
-  });
-  await client.connect();
-  const query = 'SELECT * FROM irl_app."user";';
-  await client.query(query);
 }
