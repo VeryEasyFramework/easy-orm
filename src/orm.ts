@@ -154,7 +154,7 @@ export class EasyOrm<
     orm: Orm,
   ): EntityClassConstructor<E> {
     const entityClass = class EntityClass {
-      orm: Orm = orm;
+      private orm: Orm = orm;
       private fields: ORMField[] = entityDef.fields;
       constructor(data: ExtractEntityFields<E["fields"]>) {
         for (const field of this.fields) {
