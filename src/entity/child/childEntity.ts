@@ -1,4 +1,4 @@
-import type { ORMField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
 
 import type { BaseFields } from "#/entity/defineEntityTypes.ts";
 export abstract class ChildEntityModel {
@@ -8,7 +8,7 @@ export abstract class ChildEntityModel {
 
   abstract childId: string;
   abstract label: string;
-  abstract fields: ORMField[];
+  abstract fields: EasyField[];
 }
 
 export type ChildEntity<M extends ChildEntityModel> =

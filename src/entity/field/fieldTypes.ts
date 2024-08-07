@@ -15,3 +15,5 @@ export interface EasyFieldTypeMap {
   PhoneField: string;
   ConnectionField: string;
 }
+
+export type EasyFieldType = keyof EasyFieldTypeMap;

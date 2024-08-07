@@ -16,7 +16,7 @@ import type {
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
-import type { ORMField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
 import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 
 export class EasyOrm<
@@ -169,7 +169,7 @@ export class EasyOrm<
   ): EntityClassConstructor<E> {
     const entityClass = class EntityClass {
       private orm: Orm = orm;
-      private fields: ORMField[] = entityDef.fields;
+      private fields: EasyField[] = entityDef.fields;
       constructor(data: ExtractEntityFields<E["fields"]>) {
         for (const field of this.fields) {
           if (field.key in data) {

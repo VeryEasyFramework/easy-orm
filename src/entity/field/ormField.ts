@@ -1,28 +1,24 @@
-import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type {
+  EasyFieldType,
+  EasyFieldTypeMap,
+} from "#/entity/field/fieldTypes.ts";
 
-export type ExtractFieldType<T> = T extends keyof EasyFieldTypeMap
-  ? EasyFieldTypeMap[T]
+export type ExtractFieldKey<T> = T extends EasyField<infer K, infer T> ? K
   : never;
 
-export type ExtractFieldKey<T> = T extends ORMField ? T["key"] : never;
-export interface ORMField<
+export interface EasyField<
   P extends PropertyKey = PropertyKey,
+  T extends EasyFieldType = EasyFieldType,
 > {
   key: P;
   label: string;
   description?: string;
-  fieldType: keyof EasyFieldTypeMap;
-  choices?: string[];
   required?: boolean;
   readOnly?: boolean;
-  linkedEntity?: string;
-  linkedEntityLabel?: string[];
-  defaultValue?: ExtractFieldType<keyof EasyFieldTypeMap>;
-}
-
-export interface Currency {
-  symbol: string;
-  name: string;
-  code: string;
-  decimals: number;
+  fieldType: T;
+  defaultValue?: EasyFieldTypeMap[T];
+  connection?: {
+    entity: string;
+    fetchFields?: Array<PropertyKey>;
+  };
 }

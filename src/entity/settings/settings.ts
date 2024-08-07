@@ -1,9 +1,9 @@
 import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
-import type { ORMField } from "../field/ormField.ts";
+import type { EasyField } from "../field/ormField.ts";
 
 export interface SettingsMeta {
   settings: string;
-  fields: ORMField[];
+  fields: EasyField[];
 }
 
 export interface Settings {
