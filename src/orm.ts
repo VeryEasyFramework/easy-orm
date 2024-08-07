@@ -89,6 +89,12 @@ export class EasyOrm<
   getEntityMeta<EntityModel>(entity: string) {
   }
 
+  hasEntity(entity: string) {
+    if (entity in this.entities) {
+      return true;
+    }
+    return false;
+  }
   async getEntity<I extends Ids, E extends R[I]>(
     entity: I,
     id: EasyFieldTypeMap["IDField"],
