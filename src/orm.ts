@@ -86,10 +86,11 @@ export class EasyOrm<
     console.log("Migrating...");
   }
 
-  getEntityMeta<EntityModel>(entity: string) {
+  getEntityMeta<I extends Ids>(entity: I): EntityDefFromModel<R[I]> {
+    return this.getEntityDef(entity);
   }
 
-  hasEntity(entity: string) {
+  hasEntity(entity: string): boolean {
     if (entity in this.entities) {
       return true;
     }
