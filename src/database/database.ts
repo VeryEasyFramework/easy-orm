@@ -81,8 +81,11 @@ export class Database<
   async dropTable(tableName: string): Promise<void> {
     await this.adapter.dropTable(tableName);
   }
-  async insertRow<T>(tableName: string, data: Record<string, any>): Promise<T> {
-    const id = generateRandomString(16);
+  async insertRow<T>(
+    tableName: string,
+    id: string,
+    data: Record<string, any>,
+  ): Promise<T> {
     return await this.adapter.insert(tableName, id, data);
   }
   async updateRow<T>(

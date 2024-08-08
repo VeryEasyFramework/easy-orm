@@ -18,6 +18,9 @@ import type {
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
 import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import { generateRandomString } from "@vef/string-utils";
+import { now } from "#/utils/dateUtils.ts";
+import { raiseOrmException } from "#/ormException.ts";
 
 export class EasyOrm<
   D extends keyof DatabaseConfig,
@@ -67,6 +70,7 @@ export class EasyOrm<
 
     return entityClass;
   }
+
   async init() {
     await this.database.init();
     this.initialized = true;
@@ -115,17 +119,151 @@ export class EasyOrm<
     entity: I,
     data: Partial<CreateEntityFromDef<R[I]>>,
   ): Promise<EntityFromDef<R[I]>> {
-    const createdAt = new Date();
     const entityDef = this.getEntityDef(entity);
-    const createData = data as EntityFromDef<R[I]>;
-    createData.createdAt = createdAt;
-    createData.updatedAt = createdAt;
+    const createData = await this.validateEntity(entity, data);
+    const entityClass = this.getEntityClass(entity as string);
+
+    const entityInstance = new entityClass(createData);
+    await entityInstance.validate?.();
+    await entityInstance.beforeInsert?.();
+    await entityInstance.beforeSave?.();
+
+    const dataToInsert = entityInstance.data;
+
     return await this.database.insertRow(
       entityDef.tableName,
-      createData,
+      entityInstance.id,
+      dataToInsert,
     );
   }
 
+  private async validateEntity<I extends Ids>(
+    entity: I,
+    data: Record<PropertyKey, any>,
+  ) {
+    const entityDef = this.getEntityDef(entity);
+
+    // drop the fields that are not in the entity definition
+    for (const key in data) {
+      if (!entityDef.fields.find((f) => f.key === key)) {
+        delete data[key];
+      }
+    }
+
+    for (const field of entityDef.fields) {
+      // Check if the field is required
+      if (field.required) {
+        if (
+          !(field.key in data) || data[field.key] === null ||
+          data[field.key] === undefined
+        ) {
+          raiseOrmException(
+            "RequiredFieldMissing",
+            `Field ${field.key as string} is required`,
+          );
+        }
+      }
+
+      // Set default value if not provided
+      const isEmpty = (value: any) => {
+        return value === null || value === undefined || value === "";
+      };
+
+      if (!(field.key in data || isEmpty(data[field.key]))) {
+        if (field.defaultValue) {
+          if (typeof field.defaultValue === "function") {
+            data[field.key] = field.defaultValue();
+          } else {
+            data[field.key] = field.defaultValue;
+          }
+        }
+        if (!field.defaultValue) {
+          switch (field.fieldType) {
+            case "BooleanField":
+              data[field.key] = false;
+              break;
+            case "JSONField":
+              data[field.key] = {};
+              break;
+            case "IntField":
+              data[field.key] = 0;
+              break;
+            case "BigIntField":
+              data[field.key] = 0;
+              break;
+            default:
+              data[field.key] = null;
+              break;
+          }
+        }
+      }
+
+      if (field.fieldType === "ConnectionField") {
+        // get fetch fields
+        if (!isEmpty(data[field.key])) {
+          console.log("fetching connection fields");
+          const connectionId = data[field.key];
+          if (!field.connection) {
+            raiseOrmException(
+              "InvalidConnection",
+              `Connection field ${field.key as string} is missing`,
+            );
+          }
+
+          // check if the connection entity exists
+
+          const connectionEntity = field.connection.entity;
+          console.log("connectionEntity", connectionEntity);
+          if (!this.hasEntity(connectionEntity)) {
+            raiseOrmException(
+              "InvalidConnection",
+              `Connection entity ${connectionEntity} does not exist`,
+            );
+          }
+
+          if (!await this.exists(connectionEntity, connectionId)) {
+            raiseOrmException(
+              "EntityNotFound",
+              `Connection ${connectionEntity} with id ${connectionId} does not exist`,
+            );
+          }
+
+          console.log("connectionId", connectionId);
+          // fetch the connection fields
+          const connectionFields = field.connection.fetchFields || [];
+          if (connectionFields.length > 0) {
+            const connectionData = await this.getEntity(
+              connectionEntity as I,
+              connectionId,
+            );
+            for (const connectionField of connectionFields) {
+              if (connectionField.key in connectionData) {
+                data[connectionField.key] = connectionData[connectionField.key];
+                console.log("connectionField", connectionField.key);
+              }
+            }
+          }
+        }
+      }
+    }
+    return data;
+  }
+  private generateId(): string {
+    return generateRandomString(32);
+  }
+
+  async exists<I extends Ids>(
+    entity: I | string,
+    id: string,
+  ): Promise<boolean> {
+    if (!this.hasEntity(entity as string)) {
+      return false;
+    }
+
+    const entityDef = this.getEntityDef(entity as I);
+    const result = await this.database.getRow(entityDef.tableName, "id", id);
+    return result ? true : false;
+  }
   async updateEntity<I extends Ids>(
     entity: I,
     id: string,
@@ -170,14 +308,53 @@ export class EasyOrm<
     const entityClass = class EntityClass {
       private orm: Orm = orm;
       private fields: EasyField[] = entityDef.fields;
-      constructor(data: ExtractEntityFields<E["fields"]>) {
-        for (const field of this.fields) {
-          if (field.key in data) {
-            const k = field.key as keyof typeof this;
 
-            this[k] = data[k] as any;
-          }
+      get id(): EasyFieldTypeMap["IDField"] {
+        return this._data.id;
+      }
+      set id(value: EasyFieldTypeMap["IDField"]) {
+        this._data.id = value;
+      }
+
+      get createdAt(): EasyFieldTypeMap["DateField"] {
+        return this._data.createdAt;
+      }
+
+      set createdAt(value: EasyFieldTypeMap["DateField"]) {
+        this._data.createdAt = value;
+      }
+
+      get updatedAt(): EasyFieldTypeMap["DateField"] {
+        return this._data.updatedAt;
+      }
+
+      set updatedAt(value: EasyFieldTypeMap["DateField"]) {
+        this._data.updatedAt = value;
+      }
+
+      private _data: Record<string, any> = {};
+      get data() {
+        return this._data;
+      }
+      constructor(
+        data: any,
+      ) {
+        console.log("data", data);
+        this._data = data;
+        for (const item in data) {
+          Object.defineProperty(this, item, {
+            get: function () {
+              return this._data[item];
+            },
+            set: function (value) {
+              this._data[item] = value;
+            },
+          });
         }
+
+        this.id = data.id || this.orm.generateId();
+        this.createdAt = data.createdAt || now();
+        this.updatedAt = data.updatedAt || now();
       }
     } as EntityClassConstructor<E>;
 

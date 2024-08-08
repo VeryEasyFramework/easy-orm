@@ -108,5 +108,6 @@ export interface EntityClassConstructor<E extends EntityDefinition> {
     & E["actions"]
     & E["hooks"]
     & { orm: Orm }
-    & ExtractEntityFields<E["fields"]>;
+    & ExtractEntityFields<E["fields"]>
+    & { data: ExtractEntityFields<E["fields"]> };
 }

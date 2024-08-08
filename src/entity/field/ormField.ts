@@ -33,6 +33,6 @@ export interface EasyField<
   readOnly?: boolean;
   fieldType: T;
   choices?: Choice[];
-  defaultValue?: EasyFieldTypeMap[T];
+  defaultValue?: EasyFieldTypeMap[T] | (() => EasyFieldTypeMap[T]);
   connection?: ConnectedField;
 }
