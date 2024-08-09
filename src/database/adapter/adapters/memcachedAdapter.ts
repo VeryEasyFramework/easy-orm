@@ -55,4 +55,13 @@ export class MemcachedAdapter extends DatabaseAdapter<MemcachedConfig> {
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
     return {} as T;
   }
+
+  async batchUpdateField(
+    tableName: string,
+    field: string,
+    value: any,
+    filters: Record<string, any>,
+  ): Promise<void> {
+    return;
+  }
 }
