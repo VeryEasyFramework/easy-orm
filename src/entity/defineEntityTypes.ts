@@ -15,11 +15,11 @@ export type EntityActionDef<
 };
 
 export interface EntityHooks {
-  beforeSave(): void;
-  afterSave(): void;
-  beforeInsert(): void;
-  afterInsert(): void;
-  validate(): void;
+  beforeSave(): Promise<void>;
+  afterSave(): Promise<void>;
+  beforeInsert(): Promise<void>;
+  afterInsert(): Promise<void>;
+  validate(): Promise<void>;
 }
 
 export type Orm = EasyOrm<
@@ -80,6 +80,10 @@ export type EntityFromDef<E> = E extends
     & BaseFields
     & EntityHooks
     & E["actions"]
+    & {
+      update(data: Record<string, any>): Promise<void>;
+      save(): Promise<void>;
+    }
   : never;
 
 export type CreateEntityFromDef<E> = E extends
@@ -101,13 +105,16 @@ export interface EntityConfig {
 }
 
 export interface EntityClassConstructor<E extends EntityDefinition> {
-  new (
-    data: ExtractEntityFields<E["fields"]>,
-  ):
+  orm: Orm;
+  fields: E["fields"];
+  new ():
     & EntityFromDef<any>
     & E["actions"]
     & E["hooks"]
-    & { orm: Orm }
     & ExtractEntityFields<E["fields"]>
-    & { data: ExtractEntityFields<E["fields"]> };
+    & { data: ExtractEntityFields<E["fields"]> }
+    & {
+      update(data: Record<string, any>): Promise<void>;
+      save(): Promise<void>;
+    };
 }

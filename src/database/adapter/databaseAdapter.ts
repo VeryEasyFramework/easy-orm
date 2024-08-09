@@ -42,4 +42,11 @@ export abstract class DatabaseAdapter<C> {
   ): Promise<RowsResult<T>>;
 
   abstract getRow<T>(tableName: string, field: string, value: any): Promise<T>;
+
+  abstract batchUpdateField(
+    tableName: string,
+    field: string,
+    value: any,
+    filters: Record<string, any>,
+  ): Promise<void>;
 }

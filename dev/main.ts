@@ -56,7 +56,7 @@ export const userEntity = defineEntity("user", {
   ],
   label: "User",
   hooks: {
-    beforeSave() {
+    async beforeSave() {
       this.fullName = `${this.firstName} ${this.lastName}`;
     },
   },
@@ -72,11 +72,16 @@ const orm = new EasyOrm({
 
 await orm.init();
 
-// orm.createEntity("user", {
+// await orm.createEntity("user", {
 //   firstName: "Eli",
 //   lastName: "Manning",
 // });
 
-orm.createEntity("userSession", {
-  user: "KIBOf1u275TUMMsb42Q4dvWrRd3wzGmr",
+// orm.createEntity("userSession", {
+//   user: "SerSPYCvpgBfXIiWkaMoljgfZfHXfTHl",
+// });
+
+await orm.updateEntity("user", "5cScrTaTGFcAZe7QC0FQpgOnn6mCf63K", {
+  firstName: "Bluen",
+  lastName: "jsodh",
 });

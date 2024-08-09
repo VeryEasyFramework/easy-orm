@@ -113,4 +113,22 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     return result.data[0];
   }
+  async batchUpdateField(
+    tableName: string,
+    field: string,
+    value: any,
+    filters: Record<string, any>,
+  ): Promise<void> {
+    let query = `UPDATE ${tableName} SET ${field} = ${value}`;
+    if (filters) {
+      query += " WHERE ";
+      query += Object.entries(filters)
+        .map(([key, value]) => {
+          key = camelToSnakeCase(key);
+          return `${key} = ${value}`;
+        })
+        .join(" AND ");
+    }
+    await this.query(query);
+  }
 }

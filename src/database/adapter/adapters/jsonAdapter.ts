@@ -113,4 +113,27 @@ export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
     }
     return data;
   }
+  async batchUpdateField(
+    tableName: string,
+    field: string,
+    value: any,
+    filters: Record<string, any>,
+  ): Promise<void> {
+    const data = await this.loadDataFromFile(tableName);
+    const newData = data.map((row) => {
+      let matchesFilter = true;
+      for (const [key, filterValue] of Object.entries(filters)) {
+        if (row[key] !== filterValue) {
+          matchesFilter = false;
+          break;
+        }
+      }
+      if (matchesFilter) {
+        row[field] = value;
+      }
+      return row;
+    });
+
+    await this.writeDataToFile(tableName, newData);
+  }
 }

@@ -3,7 +3,8 @@ type OrmExceptionType =
   | "RequiredFieldMissing"
   | "InvalidField"
   | "InvalidFieldType"
-  | "InvalidConnection";
+  | "InvalidConnection"
+  | "EntityAlreadyExists";
 
 export class OrmException extends Error {
   type: OrmExceptionType;

@@ -107,4 +107,13 @@ export class Database<
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
     return await this.adapter.getRow(tableName, field, value);
   }
+
+  async batchUpdateField(
+    tableName: string,
+    field: string,
+    value: any,
+    filters: Record<string, any>,
+  ) {
+    await this.adapter.batchUpdateField(tableName, field, value, filters);
+  }
 }

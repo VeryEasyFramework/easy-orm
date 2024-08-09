@@ -10,18 +10,22 @@ import type {
   EntityDefFromModel,
   EntityDefinition,
   EntityFromDef,
-  EntityHooks,
-  ExtractEntityFields,
   ListEntityFromDef,
-  Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
-import type { EasyField } from "#/entity/field/ormField.ts";
-import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
-import { generateRandomString } from "@vef/string-utils";
-import { now } from "#/utils/dateUtils.ts";
-import { raiseOrmException } from "#/ormException.ts";
 
+import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+
+import { createEntityClass } from "#/entity/entityClass.ts";
+import { raiseOrmException } from "#/ormException.ts";
+interface Registry {
+  [key: string]: {
+    [key: PropertyKey]: {
+      entity: string;
+      field: PropertyKey;
+    }[];
+  };
+}
 export class EasyOrm<
   D extends keyof DatabaseConfig,
   E extends Array<EntityDefinition>,
@@ -34,10 +38,13 @@ export class EasyOrm<
   Ids extends keyof R,
 > {
   private entities: R = {} as R;
+  private entityKeys: string[] = [];
   private entityClasses: C = {} as C;
   private initialized: boolean = false;
 
-  private database: Database<D>;
+  registry: Registry = {};
+
+  database: Database<D>;
   constructor(options: {
     entities: E;
     databaseType: D;
@@ -53,6 +60,202 @@ export class EasyOrm<
     }
   }
 
+  async init() {
+    await this.database.init();
+    this.initialized = true;
+    this.validateEntities();
+  }
+
+  addEntity(entity: EntityDefinition) {
+    if (this.initialized) {
+      throw new Error("Cannot add entities after initialization");
+    }
+    if (this.entityKeys.includes(entity.entityId)) {
+      raiseOrmException(
+        "EntityAlreadyExists",
+        `Entity ${entity.entityId} already exists`,
+      );
+    }
+    this.entityKeys.push(entity.entityId);
+    // TODO: Add validation for entity definition
+    this.entities[entity.entityId as keyof R] = entity as R[keyof R];
+    this.entityClasses[entity.entityId as keyof C] = createEntityClass(
+      entity,
+      this,
+    ) as C[keyof C];
+  }
+
+  private validateEntities() {
+    for (const entity of this.entityKeys) {
+      const entityDef = this.getEntityDef(entity as Ids);
+      this.validateEntityDef(entityDef);
+    }
+  }
+
+  private validateEntityDef(entity: EntityDefinition) {
+    this.validateFetchFields(entity);
+  }
+  private validateFetchFields(entity: EntityDefinition) {
+    const fields = entity.fields.filter((field) =>
+      field.fieldType === "ConnectionField"
+    );
+    for (const field of fields) {
+      if (!field.connection) {
+        raiseOrmException(
+          "InvalidConnection",
+          `Connection field ${field.key as string} is missing`,
+        );
+      }
+      if (!this.hasEntity(field.connection.entity)) {
+        raiseOrmException(
+          "InvalidConnection",
+          `Connection entity ${field.connection.entity} does not exist`,
+        );
+      }
+      const connectionEntity = this.getEntityDef(
+        field.connection.entity as Ids,
+      );
+
+      const fetchFields = field.connection.fetchFields || [];
+      const connectionFields = connectionEntity.fields.map((field) =>
+        field.key
+      );
+
+      for (const fetchField of fetchFields) {
+        if (!connectionFields.includes(fetchField.key)) {
+          raiseOrmException(
+            "InvalidField",
+            `Connection field ${fetchField.key} does not exist on entity ${field.connection.entity}`,
+          );
+        }
+        this.registerFetchField({
+          source: {
+            entity: entity.entityId,
+            field: field.key,
+          },
+          target: {
+            entity: field.connection.entity,
+            field: fetchField.key,
+          },
+        });
+      }
+    }
+  }
+  private registerFetchField(config: {
+    source: {
+      entity: string;
+      field: PropertyKey;
+    };
+    target: {
+      entity: string;
+      field: PropertyKey;
+    };
+  }) {
+    if (!this.registry[config.target.entity]) {
+      this.registry[config.target.entity] = {};
+    }
+    if (!this.registry[config.target.entity][config.target.field]) {
+      this.registry[config.target.entity][config.target.field] = [];
+    }
+
+    this.registry[config.target.entity][config.target.field].push({
+      entity: config.source.entity,
+      field: config.source.field,
+    });
+  }
+  migrate() {
+    console.log("Migrating...");
+  }
+
+  findInRegistry(entity: string): Registry[string] | undefined {
+    return this.registry[entity];
+  }
+  /**
+   * Get an entity by id
+   */
+  async getEntity<I extends Ids, E extends R[I]>(
+    entity: I,
+    id: EasyFieldTypeMap["IDField"],
+  ): Promise<EntityFromDef<R[I]>> {
+    const entityClass = this.getEntityClass(entity as string);
+
+    const entityInstance = new entityClass() as EntityFromDef<R[I]>;
+    await entityInstance.load(id);
+    return entityInstance;
+  }
+
+  /**
+   * Create an new entity
+   */
+  async createEntity<I extends Ids>(
+    entity: I,
+    data: Partial<CreateEntityFromDef<R[I]>>,
+  ): Promise<EntityFromDef<R[I]>> {
+    const entityClass = this.getEntityClass(entity as string);
+
+    const entityInstance = new entityClass();
+    await entityInstance.update(data);
+    await entityInstance.save();
+    return entityInstance as EntityFromDef<R[I]>;
+  }
+
+  /**
+   * Update an entity
+   */
+  async updateEntity<I extends Ids>(
+    entity: I,
+    id: string,
+    data: Partial<CreateEntityFromDef<R[I]>>,
+  ): Promise<EntityFromDef<R[I]>> {
+    const entityInstance = await this.getEntity(entity, id);
+    await entityInstance.update(data);
+    await entityInstance.save();
+    return entityInstance;
+  }
+
+  /**
+   * Delete an entity
+   */
+  async deleteEntity<I extends Ids>(entity: I, id: string): Promise<boolean> {
+    await this.database.deleteRow(
+      this.getEntityDef(entity).tableName,
+      "id",
+      id,
+    );
+    return true;
+  }
+
+  /**
+   * Get a list of entities
+   */
+  async getEntityList<I extends Ids, L extends ListEntityFromDef<R[I]>>(
+    entity: I,
+    options?: ListOptions,
+  ): Promise<RowsResult<L>> {
+    const entityDef = this.getEntityDef(entity);
+
+    const result = await this.database.getRows<L>(entityDef.tableName, options);
+    return result;
+  }
+
+  async batchUpdateField<I extends Ids>(
+    entity: I,
+    field: string,
+    value: any,
+    filters: Record<string, any>,
+  ) {
+    const entityDef = this.getEntityDef(entity);
+
+    await this.database.batchUpdateField(
+      entityDef.tableName,
+      field,
+      value,
+      filters,
+    );
+  }
+  /**
+   *  Getters for entity definitions
+   */
   private getEntityDef<
     I extends Ids,
     M extends EntityDefFromModel<R[I]>,
@@ -71,185 +274,15 @@ export class EasyOrm<
     return entityClass;
   }
 
-  async init() {
-    await this.database.init();
-    this.initialized = true;
-  }
-
-  addEntity(entity: EntityDefinition) {
-    if (this.initialized) {
-      throw new Error("Cannot add entities after initialization");
-    }
-    this.entities[entity.entityId as keyof R] = entity as R[keyof R];
-    this.entityClasses[entity.entityId as keyof C] = this.createEntityClass(
-      entity,
-      this,
-    ) as C[keyof C];
-  }
-  migrate() {
-    console.log("Migrating...");
-  }
-
-  getEntityMeta<I extends Ids>(entity: I): EntityDefFromModel<R[I]> {
-    return this.getEntityDef(entity);
-  }
+  /**
+   * Validation helpers
+   */
 
   hasEntity(entity: string): boolean {
     if (entity in this.entities) {
       return true;
     }
     return false;
-  }
-  async getEntity<I extends Ids, E extends R[I]>(
-    entity: I,
-    id: EasyFieldTypeMap["IDField"],
-  ): Promise<EntityFromDef<R[I]>> {
-    const entityDef = this.getEntityDef(entity);
-    const entityClass = this.getEntityClass(entity as string);
-    const result = await this.database.getRow<ListEntityFromDef<E>>(
-      entityDef.tableName,
-      "id",
-      id,
-    );
-    const entityInstance = new entityClass(result) as EntityFromDef<R[I]>;
-    return entityInstance as EntityFromDef<R[I]>;
-  }
-
-  async createEntity<I extends Ids>(
-    entity: I,
-    data: Partial<CreateEntityFromDef<R[I]>>,
-  ): Promise<EntityFromDef<R[I]>> {
-    const entityDef = this.getEntityDef(entity);
-    const createData = await this.validateEntity(entity, data);
-    const entityClass = this.getEntityClass(entity as string);
-
-    const entityInstance = new entityClass(createData);
-    await entityInstance.validate?.();
-    await entityInstance.beforeInsert?.();
-    await entityInstance.beforeSave?.();
-
-    const dataToInsert = entityInstance.data;
-
-    return await this.database.insertRow(
-      entityDef.tableName,
-      entityInstance.id,
-      dataToInsert,
-    );
-  }
-
-  private async validateEntity<I extends Ids>(
-    entity: I,
-    data: Record<PropertyKey, any>,
-  ) {
-    const entityDef = this.getEntityDef(entity);
-
-    // drop the fields that are not in the entity definition
-    for (const key in data) {
-      if (!entityDef.fields.find((f) => f.key === key)) {
-        delete data[key];
-      }
-    }
-
-    for (const field of entityDef.fields) {
-      // Check if the field is required
-      if (field.required) {
-        if (
-          !(field.key in data) || data[field.key] === null ||
-          data[field.key] === undefined
-        ) {
-          raiseOrmException(
-            "RequiredFieldMissing",
-            `Field ${field.key as string} is required`,
-          );
-        }
-      }
-
-      // Set default value if not provided
-      const isEmpty = (value: any) => {
-        return value === null || value === undefined || value === "";
-      };
-
-      if (!(field.key in data || isEmpty(data[field.key]))) {
-        if (field.defaultValue) {
-          if (typeof field.defaultValue === "function") {
-            data[field.key] = field.defaultValue();
-          } else {
-            data[field.key] = field.defaultValue;
-          }
-        }
-        if (!field.defaultValue) {
-          switch (field.fieldType) {
-            case "BooleanField":
-              data[field.key] = false;
-              break;
-            case "JSONField":
-              data[field.key] = {};
-              break;
-            case "IntField":
-              data[field.key] = 0;
-              break;
-            case "BigIntField":
-              data[field.key] = 0;
-              break;
-            default:
-              data[field.key] = null;
-              break;
-          }
-        }
-      }
-
-      if (field.fieldType === "ConnectionField") {
-        // get fetch fields
-        if (!isEmpty(data[field.key])) {
-          console.log("fetching connection fields");
-          const connectionId = data[field.key];
-          if (!field.connection) {
-            raiseOrmException(
-              "InvalidConnection",
-              `Connection field ${field.key as string} is missing`,
-            );
-          }
-
-          // check if the connection entity exists
-
-          const connectionEntity = field.connection.entity;
-          console.log("connectionEntity", connectionEntity);
-          if (!this.hasEntity(connectionEntity)) {
-            raiseOrmException(
-              "InvalidConnection",
-              `Connection entity ${connectionEntity} does not exist`,
-            );
-          }
-
-          if (!await this.exists(connectionEntity, connectionId)) {
-            raiseOrmException(
-              "EntityNotFound",
-              `Connection ${connectionEntity} with id ${connectionId} does not exist`,
-            );
-          }
-
-          console.log("connectionId", connectionId);
-          // fetch the connection fields
-          const connectionFields = field.connection.fetchFields || [];
-          if (connectionFields.length > 0) {
-            const connectionData = await this.getEntity(
-              connectionEntity as I,
-              connectionId,
-            );
-            for (const connectionField of connectionFields) {
-              if (connectionField.key in connectionData) {
-                data[connectionField.key] = connectionData[connectionField.key];
-                console.log("connectionField", connectionField.key);
-              }
-            }
-          }
-        }
-      }
-    }
-    return data;
-  }
-  private generateId(): string {
-    return generateRandomString(32);
   }
 
   async exists<I extends Ids>(
@@ -263,119 +296,5 @@ export class EasyOrm<
     const entityDef = this.getEntityDef(entity as I);
     const result = await this.database.getRow(entityDef.tableName, "id", id);
     return result ? true : false;
-  }
-  async updateEntity<I extends Ids>(
-    entity: I,
-    id: string,
-    data: Partial<CreateEntityFromDef<R[I]>>,
-  ): Promise<EntityFromDef<R[I]>> {
-    const entityDef = this.getEntityDef(entity);
-    const updateData = data as EntityFromDef<R[I]>;
-    updateData.updatedAt = new Date();
-
-    return await this.database.updateRow(
-      entityDef.tableName,
-      id,
-      updateData,
-    );
-  }
-  async deleteEntity<I extends Ids>(entity: I, id: string): Promise<boolean> {
-    await this.database.deleteRow(
-      this.getEntityDef(entity).tableName,
-      "id",
-      id,
-    );
-    return true;
-  }
-
-  async getEntityList<I extends Ids, L extends ListEntityFromDef<R[I]>>(
-    entity: I,
-    options?: ListOptions,
-  ): Promise<RowsResult<L>> {
-    const entityDef = this.getEntityDef(entity);
-
-    const result = await this.database.getRows<L>(entityDef.tableName, options);
-    return result;
-  }
-
-  private createEntityClass<
-    D extends EntityDefinition,
-    E extends EntityDefFromModel<D>,
-  >(
-    entityDef: D,
-    orm: Orm,
-  ): EntityClassConstructor<E> {
-    const entityClass = class EntityClass {
-      private orm: Orm = orm;
-      private fields: EasyField[] = entityDef.fields;
-
-      get id(): EasyFieldTypeMap["IDField"] {
-        return this._data.id;
-      }
-      set id(value: EasyFieldTypeMap["IDField"]) {
-        this._data.id = value;
-      }
-
-      get createdAt(): EasyFieldTypeMap["DateField"] {
-        return this._data.createdAt;
-      }
-
-      set createdAt(value: EasyFieldTypeMap["DateField"]) {
-        this._data.createdAt = value;
-      }
-
-      get updatedAt(): EasyFieldTypeMap["DateField"] {
-        return this._data.updatedAt;
-      }
-
-      set updatedAt(value: EasyFieldTypeMap["DateField"]) {
-        this._data.updatedAt = value;
-      }
-
-      private _data: Record<string, any> = {};
-      get data() {
-        return this._data;
-      }
-      constructor(
-        data: any,
-      ) {
-        console.log("data", data);
-        this._data = data;
-        for (const item in data) {
-          Object.defineProperty(this, item, {
-            get: function () {
-              return this._data[item];
-            },
-            set: function (value) {
-              this._data[item] = value;
-            },
-          });
-        }
-
-        this.id = data.id || this.orm.generateId();
-        this.createdAt = data.createdAt || now();
-        this.updatedAt = data.updatedAt || now();
-      }
-    } as EntityClassConstructor<E>;
-
-    for (const hook in entityDef.hooks) {
-      const hookKey = hook as keyof EntityHooks;
-      entityClass.prototype[hook] = entityDef.hooks[hookKey];
-    }
-
-    for (const action in entityDef.actions) {
-      entityClass.prototype[action] = entityDef.actions[action];
-    }
-    for (const field of entityDef.fields) {
-      entityClass.prototype[field.key] = field.defaultValue || null;
-    }
-
-    for (const hook in entityDef.hooks) {
-      entityClass.prototype[hook].bind(entityClass);
-    }
-    for (const action in entityDef.actions) {
-      entityClass.prototype[action].bind(entityClass);
-    }
-    return entityClass;
   }
 }
