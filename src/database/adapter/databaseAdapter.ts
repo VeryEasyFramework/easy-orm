@@ -12,7 +12,9 @@ export abstract class DatabaseAdapter<C> {
     this.config = config;
     this.init();
   }
-
+  query<T>(query: string): Promise<RowsResult<T>> {
+    throw new Error("Method not implemented.");
+  }
   abstract init(): Promise<void> | void;
   abstract connect(): Promise<void>;
 

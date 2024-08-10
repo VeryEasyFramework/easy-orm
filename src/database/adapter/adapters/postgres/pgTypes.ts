@@ -96,3 +96,22 @@ export type SimpleQueryResponse = {
   "Z": "ReadyForQuery";
   "N": "NoticeResponse";
 };
+
+export const QR_TYPE = {
+  COMMAND_COMPLETE: "C",
+  COPY_IN_RESPONSE: "G",
+  COPY_OUT_RESPONSE: "H",
+  ROW_DESCRIPTION: "T",
+  DATA_ROW: "D",
+  EMPTY_QUERY_RESPONSE: "I",
+  ERROR_RESPONSE: "E",
+  READY_FOR_QUERY: "Z",
+  NOTICE_RESPONSE: "N",
+} as const;
+
+export const STATUS_MAP = {
+  IDLE: "I",
+  TRANSACTION: "T",
+  ERROR: "E",
+  KEY_DATA: "K",
+} as const;

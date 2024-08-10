@@ -38,17 +38,30 @@ export function getDataType(dataTypeID: number) {
   return "unknown";
 }
 
-export function convertToDataType(data: string, type: number) {
+function stripNulls(data: Uint8Array) {
+  let i = data.length - 1;
+  while (data[i] === 0) {
+    i--;
+  }
+  return data.slice(0, i + 1);
+}
+function decodeText(data: Uint8Array) {
+  return new TextDecoder().decode(data);
+}
+export function convertToDataType(data: Uint8Array, type: number) {
+  // data = stripNulls(data);
+  const text = decodeText(data);
+
   switch (type) {
     case 16:
-      return data === "t";
+      return text === "t";
     case 20 || 21 || 23:
-      return parseInt(data);
+      return parseInt(text);
     case 142:
-      return JSON.parse(data);
+      return JSON.parse(text);
     case 1184:
-      return new Date(data);
+      return new Date(text);
     default:
-      return data;
+      return text;
   }
 }

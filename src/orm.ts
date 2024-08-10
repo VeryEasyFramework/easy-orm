@@ -233,7 +233,10 @@ export class EasyOrm<
     options?: ListOptions,
   ): Promise<RowsResult<L>> {
     const entityDef = this.getEntityDef(entity);
-
+    options = options || {};
+    if (!options.limit) {
+      options.limit = 100;
+    }
     const result = await this.database.getRows<L>(entityDef.tableName, options);
     return result;
   }

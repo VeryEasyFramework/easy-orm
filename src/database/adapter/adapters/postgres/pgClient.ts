@@ -4,12 +4,13 @@
 import { errorCodeMap, pgErrorMap } from "./maps/errorMap.ts";
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
 import { toCamelCase } from "@vef/string-utils";
-import type {
-  ColumnDescription,
-  PgClientConfig,
-  QueryResponse,
-  ServerStatus,
-  SimpleQueryResponse,
+import {
+  type ColumnDescription,
+  type PgClientConfig,
+  QR_TYPE,
+  type QueryResponse,
+  type ServerStatus,
+  type SimpleQueryResponse,
 } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 import { MessageWriter } from "#/database/adapter/adapters/postgres/messageWriter.ts";
 import { MessageReader } from "#/database/adapter/adapters/postgres/messageReader.ts";
@@ -70,30 +71,30 @@ export class PostgresClient {
     if (this.connected) {
       return;
     }
-
-    const options = {
-      host: this.connectionParams.host,
-      port: this.connectionParams.port,
-      unixPath: this.connectionParams.unixPath,
-    };
-    if (options.unixPath) {
-      if (options.host || options.port) {
+    let connectionType: "tcp" | "unix" = "tcp";
+    const { host, port, unixPath } = this.connectionParams;
+    if (unixPath) {
+      if (host || port) {
         throw new Error("Cannot use both unixPath and host/port");
       }
-      this.conn = await Deno.connect({
-        path: options.unixPath,
-        transport: "unix",
-      });
+      connectionType = "unix";
     }
 
-    if (options?.port || options?.host || !options) {
-      if (options?.unixPath) {
-        throw new Error("Cannot use both unixPath and host/port");
+    switch (connectionType) {
+      case "tcp": {
+        this.conn = await Deno.connect({
+          port: port || 5432,
+          hostname: host || "localhost",
+        });
+        break;
       }
-      this.conn = await Deno.connect({
-        port: options?.port || 5432,
-        hostname: options?.host || "localhost",
-      });
+      case "unix": {
+        this.conn = await Deno.connect({
+          transport: "unix",
+          path: unixPath as string,
+        });
+        break;
+      }
     }
 
     this.reader = new MessageReader(this.conn);
@@ -279,38 +280,47 @@ export class PostgresClient {
     let status;
     const fields: ColumnDescription[] = [];
     const data: T[] = [];
-
+    let gotDescription = false;
+    let rowCount = 0;
     while (!status) {
       await this.reader.nextMessage();
       const messageType = this.reader.messageType as keyof SimpleQueryResponse;
-
       switch (messageType) {
-        case "T": {
+        case QR_TYPE.ROW_DESCRIPTION: {
+          if (gotDescription) {
+            throw new Error("Got row description twice");
+            break;
+          }
+          gotDescription = true;
           const columns = this.parseRowDescription();
+
           fields.push(...columns);
           break;
         }
-        case "D": {
+        case QR_TYPE.DATA_ROW: {
+          rowCount++;
           const columnCount = this.reader.readInt16();
           const row = {} as Record<string, any>;
           for (let i = 0; i < columnCount; i++) {
             const field = fields[i];
 
             const length = this.reader.readInt32(); //
+
             if (length === -1) {
               row[field.camelName] = null;
               continue;
             }
             const column = this.reader.readBytes(length);
+
             row[field.camelName] = convertToDataType(
-              this.decode(column),
+              column,
               field.dataTypeID,
             );
           }
           data.push(row as T);
           break;
         }
-        case "Z": {
+        case QR_TYPE.READY_FOR_QUERY: {
           const serverStatus = this.reader.readString(1) as
             | "I"
             | "T"
@@ -319,9 +329,22 @@ export class PostgresClient {
           status = "done";
           break;
         }
-        case "E": {
+        case QR_TYPE.ERROR_RESPONSE: {
           this.readError();
           break;
+        }
+        case QR_TYPE.EMPTY_QUERY_RESPONSE: {
+          break;
+        }
+        case QR_TYPE.COMMAND_COMPLETE: {
+          const message = this.reader.readAllBytes();
+          console.log(this.decode(message));
+          // throw new Error("Command complete");
+          break;
+        }
+        default: {
+          console.log({ messageType });
+          throw new Error("Unknown message type");
         }
       }
     }

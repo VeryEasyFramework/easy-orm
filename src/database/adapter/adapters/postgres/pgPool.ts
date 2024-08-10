@@ -83,9 +83,12 @@ export class PostgresPool {
   }
 
   async query<T>(query: string): Promise<QueryResponse<T>> {
+    console.log("query", query);
     const client = await this.getClient();
+    console.log("got client");
 
     const result = await client.query<T>(query);
+    console.log("got result");
     this.returnClient(client);
     return result;
   }

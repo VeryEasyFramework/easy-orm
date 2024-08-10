@@ -101,6 +101,20 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         query += ` WHERE ${key} = ${value}`;
       }
     }
+
+    if (options?.offset) {
+      query += ` OFFSET ${options.offset}`;
+    }
+    if (options?.orderBy) {
+      query += ` ORDER BY ${camelToSnakeCase(options.orderBy)}`;
+      const order = options.order || "ASC";
+      query += ` ${order}`;
+    }
+
+    if (options?.limit) {
+      query += ` LIMIT ${options.limit}`;
+    }
+
     const result = await this.query<T>(query);
 
     return result;
