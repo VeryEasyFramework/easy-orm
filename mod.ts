@@ -12,4 +12,7 @@ export type {
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 
-export type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+export type {
+  EasyFieldType,
+  EasyFieldTypeMap,
+} from "#/entity/field/fieldTypes.ts";
