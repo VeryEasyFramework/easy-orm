@@ -66,6 +66,7 @@ export class EasyOrm<
     this.validateEntities();
   }
 
+  entityInfo: EntityDefinition[] = [];
   addEntity(entity: EntityDefinition) {
     if (this.initialized) {
       throw new Error("Cannot add entities after initialization");
@@ -76,6 +77,7 @@ export class EasyOrm<
         `Entity ${entity.entityId} already exists`,
       );
     }
+    this.entityInfo.push(entity);
     this.entityKeys.push(entity.entityId);
     // TODO: Add validation for entity definition
     this.entities[entity.entityId as keyof R] = entity as R[keyof R];
