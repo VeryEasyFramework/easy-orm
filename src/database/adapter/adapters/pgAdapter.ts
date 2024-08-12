@@ -3,7 +3,7 @@ import {
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
-import { camelToSnakeCase } from "@vef/string-utils";
+import { camelToSnakeCase, toSnakeCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 
@@ -120,6 +120,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     return result;
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
+    field = toSnakeCase(field);
     const query = `SELECT * FROM ${tableName} WHERE ${field} = ${value}`;
     const result = await this.query<T>(query);
     if (result.rowCount === 0) {
