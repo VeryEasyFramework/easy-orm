@@ -29,6 +29,7 @@ export interface EasyField<
   key: P;
   label?: string;
   description?: string;
+  primaryKey?: boolean;
   required?: boolean;
   readOnly?: boolean;
   fieldType: T;

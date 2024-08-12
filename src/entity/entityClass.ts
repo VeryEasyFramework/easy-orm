@@ -18,13 +18,20 @@ class EntityClass {
   private orm!: Orm;
   private fields!: EasyField[];
   private meta!: EntityDefinition;
-
+  private primaryKey?: string;
   private _prevData: Record<string, any> = {};
   private _isNew: boolean = false;
   get id(): EasyFieldTypeMap["IDField"] {
+    if (this.primaryKey) {
+      return this._data[this.primaryKey];
+    }
     return this._data.id;
   }
   set id(value: EasyFieldTypeMap["IDField"]) {
+    if (this.primaryKey) {
+      this._data[this.primaryKey] = value;
+      return;
+    }
     this._data.id = value;
   }
 
@@ -51,9 +58,10 @@ class EntityClass {
   constructor() {
   }
   async load(id: EasyFieldTypeMap["IDField"]) {
+    const idKey = this.primaryKey || "id";
     this._data = await this.orm.database.getRow(
       this.meta.tableName,
-      "id",
+      idKey,
       id,
     ) as Record<string, any>;
   }
@@ -99,6 +107,15 @@ class EntityClass {
     await this._afterInsert();
   }
 
+  private getChangedData() {
+    const changedData: Record<string, any> = {};
+    for (const key in this._data) {
+      if (this._data[key] !== this._prevData[key]) {
+        changedData[key] = this._data[key];
+      }
+    }
+    return changedData;
+  }
   async save() {
     await this.validate(this._data);
     if (this._isNew) {
@@ -115,10 +132,11 @@ class EntityClass {
       return;
     }
     await this.beforeSave();
+    const changedData = this.getChangedData();
     await this.orm.database.updateRow(
       this.meta.tableName,
       this.id,
-      this._data,
+      changedData,
     );
     await this.afterSave();
   }

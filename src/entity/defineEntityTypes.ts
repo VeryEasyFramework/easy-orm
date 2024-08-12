@@ -43,6 +43,7 @@ export type EntityDef<
   A extends EntityActionRecord<AP>,
 > = {
   entityId: Id;
+  primaryKey?: string;
   label: string;
   fields: F;
   hooks: EntityHooks;
