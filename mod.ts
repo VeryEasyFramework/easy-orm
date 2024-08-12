@@ -3,6 +3,7 @@ export { defineEntity } from "#/entity/defineEntity.ts";
 export type {
   CreateEntityFromDef,
   EntityClassConstructor,
+  EntityConfig,
   EntityDefFromModel,
   EntityDefinition,
   EntityFromDef,
@@ -11,7 +12,7 @@ export type {
   ListEntityFromDef,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
-
+export type { EasyField } from "#/entity/field/ormField.ts";
 export type {
   EasyFieldType,
   EasyFieldTypeMap,

@@ -11,13 +11,13 @@ interface Choice {
   label: string;
 }
 
-interface FetchedField {
+export interface FetchedField {
   key: string;
   label?: string;
   description?: string;
 }
 
-interface ConnectedField {
+export interface ConnectedField {
   entity: string;
   fetchFields?: Array<FetchedField>;
 }

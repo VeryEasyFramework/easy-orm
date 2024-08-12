@@ -20,7 +20,7 @@ export function defineEntity<
     (
       ...args: any[]
     ) => Promise<void>
-  >,
+  > = {},
 >(entityId: Id, options: {
   label: string;
   fields: F;
