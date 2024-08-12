@@ -1,12 +1,12 @@
-import {
+import type {
   EntityClassConstructor,
   EntityDefFromModel,
   EntityDefinition,
   EntityHooks,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
-import { EasyField } from "#/entity/field/ormField.ts";
-import { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 import { now } from "#/utils/dateUtils.ts";
 import { generateId } from "#/utils/misc.ts";
 import { raiseOrmException } from "#/ormException.ts";

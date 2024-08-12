@@ -39,8 +39,8 @@ export type EntityDef<
   P extends PropertyKey,
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
-  AP extends PropertyKey,
-  A extends Record<AP, (...args: any[]) => Promise<void>>,
+  AP extends PropertyKey | undefined,
+  A extends EntityActionRecord<AP>,
 > = {
   entityId: Id;
   label: string;
@@ -50,7 +50,14 @@ export type EntityDef<
   tableName: string;
   actions: A;
 };
-
+export type EntityActionRecord<AP extends PropertyKey | undefined> = AP extends
+  PropertyKey ? Record<
+    AP,
+    (
+      ...args: any[]
+    ) => Promise<void>
+  >
+  : {};
 export type EntityDefinition<Id extends string = string> = EntityDef<
   Id,
   PropertyKey,
@@ -83,6 +90,7 @@ export type EntityFromDef<E> = E extends
     & {
       update(data: Record<string, any>): Promise<void>;
       save(): Promise<void>;
+      load(id: string): Promise<void>;
     }
   : never;
 
@@ -116,5 +124,6 @@ export interface EntityClassConstructor<E extends EntityDefinition> {
     & {
       update(data: Record<string, any>): Promise<void>;
       save(): Promise<void>;
+      load(id: string): Promise<void>;
     };
 }

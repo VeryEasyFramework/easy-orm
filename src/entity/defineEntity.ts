@@ -1,11 +1,12 @@
 import type { EasyField } from "#/entity/field/ormField.ts";
 import type {
+  EntityActionRecord,
   EntityConfig,
   EntityDef,
   EntityHooks,
   ExtractEntityFields,
   Orm,
-} from "./defineEntityTypes.ts";
+} from "#/entity/defineEntityTypes.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export function defineEntity<
@@ -14,13 +15,8 @@ export function defineEntity<
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
   H extends Partial<EntityHooks>,
-  AP extends PropertyKey,
-  A extends Record<
-    AP,
-    (
-      ...args: any[]
-    ) => Promise<void>
-  > = {},
+  AP extends PropertyKey | undefined,
+  A extends EntityActionRecord<AP>,
 >(entityId: Id, options: {
   label: string;
   fields: F;
