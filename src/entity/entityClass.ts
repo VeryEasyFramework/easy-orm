@@ -18,7 +18,19 @@ class EntityClass {
   private orm!: Orm;
   private fields!: EasyField[];
   private meta!: EntityDefinition;
-  private primaryKey?: string;
+  private _primaryKey?: string;
+
+  get primaryKey() {
+    return this._primaryKey;
+  }
+  set primaryKey(value: string | undefined) {
+    this._primaryKey
+      ? raiseOrmException(
+        "PrimaryKeyAlreadySet",
+        "Primary key is already set",
+      )
+      : this._primaryKey = value;
+  }
   private _prevData: Record<string, any> = {};
   private _isNew: boolean = false;
   get id(): EasyFieldTypeMap["IDField"] {
@@ -292,6 +304,9 @@ export function createEntityClass<
         writable: false,
       });
       entityDef.fields.forEach((field) => {
+        if (field.primaryKey) {
+          this.primaryKey = field.key as string;
+        }
         Object.defineProperty(this, field.key, {
           get: function () {
             return this._data[field.key];

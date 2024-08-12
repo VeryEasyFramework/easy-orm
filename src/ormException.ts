@@ -4,7 +4,8 @@ type OrmExceptionType =
   | "InvalidField"
   | "InvalidFieldType"
   | "InvalidConnection"
-  | "EntityAlreadyExists";
+  | "EntityAlreadyExists"
+  | "PrimaryKeyAlreadySet";
 
 export class OrmException extends Error {
   type: OrmExceptionType;
