@@ -1,6 +1,7 @@
 import {
   PostgresClient,
 } from "#/database/adapter/adapters/postgres/pgClient.ts";
+import { easyLog } from "@vef/easy-app";
 import type { PostgresConfig } from "#/database/adapter/adapters/pgAdapter.ts";
 import type {
   PgClientConfig,
@@ -83,12 +84,10 @@ export class PostgresPool {
   }
 
   async query<T>(query: string): Promise<QueryResponse<T>> {
-    console.log("query", query);
+    easyLog.debug(query, "Postgres Query");
     const client = await this.getClient();
-    console.log("got client");
 
     const result = await client.query<T>(query);
-    console.log("got result");
     this.returnClient(client);
     return result;
   }

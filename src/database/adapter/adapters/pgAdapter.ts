@@ -6,6 +6,7 @@ import {
 import { camelToSnakeCase, toSnakeCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
+import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
 
 export interface PostgresConfig {
   clientOptions: PgClientConfig;
@@ -120,11 +121,16 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     return result;
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
-    field = camelToSnakeCase(field);
+    if (this.camelCase) {
+      field = camelToSnakeCase(field);
+    }
+    value = formatValue(value);
     const query = `SELECT * FROM ${tableName} WHERE ${field} = ${value}`;
     const result = await this.query<T>(query);
     if (result.rowCount === 0) {
-      throw new Error("Row not found");
+      throw new PgError({
+        message: `No row found in ${tableName} where ${field} = ${value}`,
+      });
     }
     return result.data[0];
   }
@@ -146,4 +152,11 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     await this.query(query);
   }
+}
+
+function formatValue(value: any): string {
+  if (typeof value === "string") {
+    return `'${value}'`;
+  }
+  return value;
 }

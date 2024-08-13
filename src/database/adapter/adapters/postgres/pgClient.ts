@@ -75,7 +75,9 @@ export class PostgresClient {
     const { host, port, unixPath } = this.connectionParams;
     if (unixPath) {
       if (host || port) {
-        throw new Error("Cannot use both unixPath and host/port");
+        throw new PgError({
+          message: "Cannot use both unixPath and host/port",
+        });
       }
       connectionType = "unix";
     }
@@ -141,7 +143,9 @@ export class PostgresClient {
               break;
             }
             case AUTH.MD5: {
-              throw new Error("MD5 authentication not implemented");
+              throw new PgError({
+                message: "MD5 authentication not implemented",
+              });
 
               //  md5 authentication
               break;
@@ -178,7 +182,7 @@ export class PostgresClient {
               break;
             }
             default: {
-              throw new Error("Unknown authentication type");
+              throw new PgError({ message: "Unknown authentication type" });
             }
           }
 
@@ -199,11 +203,10 @@ export class PostgresClient {
           break;
         }
         case "E": {
-          // const errorLength = this.reader.readInt32();
-          // const error = this.reader.readBytes(errorLength);
           this.readError();
-          throw new Error("Error connecting to Postgres");
-          break;
+          throw new PgError({
+            massage: "Error connecting to Postgres",
+          });
         }
         case "K": {
           // const keyData = new DataView(this.reader.readAllBytes().buffer);
@@ -213,8 +216,7 @@ export class PostgresClient {
           break;
         }
         default: {
-          console.log({ messageType: this.reader.messageType });
-          throw new Error("Unknown message type");
+          throw new PgError({ message: "Unknown message type" });
         }
       }
     }
@@ -288,7 +290,7 @@ export class PostgresClient {
       switch (messageType) {
         case QR_TYPE.ROW_DESCRIPTION: {
           if (gotDescription) {
-            throw new Error("Got row description twice");
+            throw new PgError({ message: "Got row description twice" });
             break;
           }
           gotDescription = true;
@@ -338,13 +340,11 @@ export class PostgresClient {
         }
         case QR_TYPE.COMMAND_COMPLETE: {
           const message = this.reader.readAllBytes();
-          console.log(this.decode(message));
-          // throw new Error("Command complete");
+          // throw new PgError("Command complete");
           break;
         }
         default: {
-          console.log({ messageType });
-          throw new Error("Unknown message type");
+          throw new PgError({ message: "Unknown message type" });
         }
       }
     }
