@@ -1,6 +1,6 @@
 {
   "name": "@vef/easy-orm",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "exports": "./mod.ts",
 
   "publish": {
@@ -14,7 +14,7 @@
   "imports": {
     "#/": "./src/",
     "@vef/deno-memcached": "jsr:@vef/deno-memcached@^0.1.1",
-    "@vef/easy-cli": "jsr:@vef/easy-cli@^0.1.13",
+    "@vef/easy-cli": "jsr:@vef/easy-cli@^0.1.15",
     "@vef/string-utils": "jsr:@vef/string-utils@^0.1.3"
   }
 }

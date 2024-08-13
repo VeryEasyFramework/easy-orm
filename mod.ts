@@ -1,3 +1,5 @@
+export { OrmException } from "#/ormException.ts";
+
 export { EasyOrm } from "#/orm.ts";
 export { defineEntity } from "#/entity/defineEntity.ts";
 export type {
