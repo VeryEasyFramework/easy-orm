@@ -14,6 +14,7 @@
   "imports": {
     "#/": "./src/",
     "@vef/deno-memcached": "jsr:@vef/deno-memcached@^0.1.1",
+    "@vef/easy-cli": "jsr:@vef/easy-cli@^0.1.13",
     "@vef/string-utils": "jsr:@vef/string-utils@^0.1.3"
   }
 }
