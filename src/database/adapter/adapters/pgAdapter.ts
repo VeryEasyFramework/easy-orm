@@ -120,7 +120,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     return result;
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
-    field = toSnakeCase(field);
+    field = camelToSnakeCase(field);
     const query = `SELECT * FROM ${tableName} WHERE ${field} = ${value}`;
     const result = await this.query<T>(query);
     if (result.rowCount === 0) {
