@@ -1,3 +1,5 @@
+export { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
+
 export { OrmException } from "#/ormException.ts";
 
 export { EasyOrm } from "#/orm.ts";
