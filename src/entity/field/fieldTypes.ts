@@ -1,5 +1,8 @@
 export interface EasyFieldTypeMap {
   IDField: string;
+  /**
+   * @description DataField is for short text data. It's limited to 255 characters.
+   */
   DataField: string;
   IntField: number;
   BigIntField: bigint;
