@@ -183,7 +183,6 @@ class EntityClass {
     }
     await this.beforeSave();
     const changedData = this.getChangedData();
-    console.log(changedData);
     await this.orm.database.updateRow(
       this.meta.tableName,
       this.id,

@@ -198,13 +198,11 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     let query = `SELECT ${columns} FROM ${tableName}`;
 
     if (options.filter) {
-      console.log(options.filter);
       const keys = Object.keys(options.filter);
       const filters = keys.map((key) => {
         const value = options!.filter![key];
         return `${toSnakeCase(key)} = ${formatValue(value)}`;
       });
-      console.log(filters);
       query += ` WHERE ${filters.join(" AND ")}`;
     }
 
