@@ -12,6 +12,7 @@ import {
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
 import { generateRandomString } from "@vef/string-utils";
+import { EasyField } from "#/entity/field/ormField.ts";
 
 export type ListOptions = {
   filter?: Record<string, any>;
@@ -73,6 +74,13 @@ export class Database<
   }
   async disconnect(): Promise<void> {
     await this.adapter.disconnect();
+  }
+
+  adaptLoadValue(field: EasyField, value: any) {
+    return this.adapter.adaptLoadValue(field, value);
+  }
+  adaptSaveValue(field: EasyField, value: any) {
+    return this.adapter.adaptSaveValue(field, value);
   }
 
   async createTable(tableName: string, fields: any): Promise<void> {

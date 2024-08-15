@@ -5,7 +5,18 @@ type OrmExceptionType =
   | "InvalidFieldType"
   | "InvalidConnection"
   | "EntityAlreadyExists"
-  | "PrimaryKeyAlreadySet";
+  | "PrimaryKeyAlreadySet"
+  | "InvalidValue"
+  | "InvalidChoices"
+  | "InvalidMultiChoices"
+  | "InvalidQuery"
+  | "InvalidFilter"
+  | "InvalidSort"
+  | "InvalidLimit"
+  | "InvalidOffset"
+  | "InvalidPage"
+  | "InvalidId"
+  | "NotImplemented";
 
 export class OrmException extends Error {
   type: OrmExceptionType;

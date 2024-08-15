@@ -7,6 +7,8 @@ import { camelToSnakeCase, toSnakeCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export interface PostgresConfig {
   clientOptions: PgClientConfig;
@@ -15,6 +17,47 @@ export interface PostgresConfig {
   camelCase?: boolean;
 }
 export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
+  adaptLoadValue(field: EasyField, value: any) {}
+  adaptSaveValue(field: EasyField, value: any) {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        value = JSON.stringify(value);
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      case "TimeStampField":
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
   private pool!: PostgresPool;
   camelCase: boolean = false;
 
@@ -50,23 +93,18 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async dropTable(tableName: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
   async insert(
     tableName: string,
     id: string,
     data: Record<string, any>,
   ): Promise<any> {
-    const columns = Object.keys(data).map((key) => camelToSnakeCase(key));
-    const values = Object.values(data).map((value) => {
-      if (typeof value === "string") {
-        return `'${value}'`;
-      }
-      return value;
-    });
-    const query = `INSERT INTO ${tableName} (${
-      columns.join(
-        ", ",
-      )
-    }) VALUES (${values.join(", ")})`;
+    const columns = this.getColumns(data);
+    const values = this.getValues(data);
+    const valuesWithColumns = columns.join(", ");
+    const valuesString = values.join(", ");
+    const query =
+      `INSERT INTO ${tableName} (${valuesWithColumns}) VALUES (${valuesString}) RETURNING *`;
     const result = await this.query(query);
     return result;
   }
@@ -75,18 +113,32 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const query = `DELETE FROM ${tableName} WHERE ${field} = ${value}`;
     await this.query(query);
   }
+  private getColumns(data: Record<string, any>): string[] {
+    return Object.keys(data).map((key) => camelToSnakeCase(key));
+  }
+  private getValues(data: Record<string, any>): string[] {
+    const values = Object.values(data);
+    return values.map((value) => {
+      if (typeof value === "string") {
+        return `'${value}'`;
+      }
+      return value;
+    });
+  }
   async update(
     tableName: string,
     id: string,
-    fields: Record<string, any>,
+    data: Record<string, any>,
   ): Promise<any> {
+    const columns = this.getColumns(data);
+    const values = this.getValues(data);
+    const valuesWithColumns = columns.map((column, index) => {
+      return `${column} = ${values[index]}`;
+    });
     const query = `UPDATE ${tableName} SET ${
-      Object.entries(fields)
-        .map(([key, value]) => {
-          key = camelToSnakeCase(key);
-          return `${key} = ${value}`;
-        })
-        .join(", ")
+      valuesWithColumns.join(
+        ", ",
+      )
     } WHERE id = ${id}`;
     const result = await this.query(query);
     return result;

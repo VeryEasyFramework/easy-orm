@@ -1,12 +1,16 @@
+import { EasyField } from "#/entity/field/ormField.ts";
+
+/**
+ * The field types that are available in Easy ORM.
+ */
 export interface EasyFieldTypeMap {
   IDField: string;
-  /**
-   * @description DataField is for short text data. It's limited to 255 characters.
-   */
   DataField: string;
   IntField: number;
   BigIntField: bigint;
+  DecimalField: number;
   DateField: Date;
+  TimeStampField: number;
   BooleanField: boolean;
   PasswordField: string;
   ChoicesField: string;

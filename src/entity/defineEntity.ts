@@ -19,6 +19,9 @@ export function defineEntity<
   A extends EntityActionRecord<AP>,
 >(entityId: Id, options: {
   label: string;
+  /**
+   * @description The fields of the entity.
+   */
   fields: F;
   tableName?: string;
   config?: EntityConfig;
