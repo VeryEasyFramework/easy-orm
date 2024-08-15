@@ -147,24 +147,34 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
-    let query = `SELECT * FROM ${tableName}`;
-    if (options?.filter) {
+    if (!options) {
+      options = {} as ListOptions;
+    }
+    let columns = "*";
+    if (options.columns) {
+      columns = options.columns.map((column) => {
+        return toSnakeCase(column);
+      }).join(", ");
+    }
+    let query = `SELECT ${columns} FROM ${tableName}`;
+
+    if (options.filter) {
       for (let [key, value] of Object.entries(options.filter)) {
         key = camelToSnakeCase(key);
         query += ` WHERE ${key} = ${value}`;
       }
     }
 
-    if (options?.offset) {
+    if (options.offset) {
       query += ` OFFSET ${options.offset}`;
     }
-    if (options?.orderBy) {
+    if (options.orderBy) {
       query += ` ORDER BY ${camelToSnakeCase(options.orderBy)}`;
       const order = options.order || "ASC";
       query += ` ${order}`;
     }
 
-    if (options?.limit) {
+    if (options.limit) {
       query += ` LIMIT ${options.limit}`;
     }
 

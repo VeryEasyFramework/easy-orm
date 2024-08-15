@@ -236,6 +236,12 @@ export class EasyOrm<
   ): Promise<RowsResult<L>> {
     const entityDef = this.getEntityDef(entity);
     options = options || {};
+    if (!options.columns) {
+      options.columns = ["id", "createdAt", "updatedAt"];
+    }
+    const listColumns = entityDef.fields.filter((field) => field.inList);
+    const columns = listColumns.map((column) => column.key) as string[];
+    options.columns = options.columns.concat(columns);
     if (!options.limit) {
       options.limit = 100;
     }

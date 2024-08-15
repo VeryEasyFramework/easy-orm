@@ -15,6 +15,7 @@ import { generateRandomString } from "@vef/string-utils";
 import { EasyField } from "#/entity/field/ormField.ts";
 
 export type ListOptions = {
+  columns?: string[];
   filter?: Record<string, any>;
   limit?: number;
   offset?: number;
