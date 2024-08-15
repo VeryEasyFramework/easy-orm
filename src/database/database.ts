@@ -11,17 +11,32 @@ import {
   type JSONConfig,
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
-import { generateRandomString } from "@vef/string-utils";
-import { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
 
-export type ListOptions = {
+export interface AdvancedFilter {
+  op:
+    | "contains"
+    | "not contains"
+    | "in list"
+    | "not in list"
+    | "between"
+    | "not between"
+    | "is"
+    | "is not"
+    | ">"
+    | "<"
+    | ">="
+    | "<=";
+  value: any;
+}
+export interface ListOptions {
   columns?: string[];
-  filter?: Record<string, any>;
+  filter?: Record<string, string | number | AdvancedFilter>;
   limit?: number;
   offset?: number;
   orderBy?: string;
   order?: "asc" | "desc";
-};
+}
 export interface DatabaseConfig {
   postgres: PostgresConfig;
   memcached: MemcachedConfig;
@@ -111,6 +126,12 @@ export class Database<
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
+    if (options?.filter) {
+      const keys = Object.keys(options.filter);
+      if (keys.length == 0) {
+        options.filter = undefined;
+      }
+    }
     return await this.adapter.getRows(tableName, options);
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {

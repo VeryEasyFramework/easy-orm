@@ -235,9 +235,15 @@ export class EasyOrm<
     options?: ListOptions,
   ): Promise<RowsResult<L>> {
     const entityDef = this.getEntityDef(entity);
+    if (!entityDef) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Entity '${entity as string}' is not a registered entity!`,
+      );
+    }
     options = options || {};
     if (!options.columns) {
-      options.columns = ["id", "createdAt", "updatedAt"];
+      options.columns = ["id"];
     }
     const listColumns = entityDef.fields.filter((field) => field.inList);
     const columns = listColumns.map((column) => column.key) as string[];
@@ -273,7 +279,14 @@ export class EasyOrm<
   >(
     entity: I,
   ): M {
-    return this.entities[entity] as M;
+    const def = this.entities[entity] as M;
+    if (!def) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Entity '${entity as string}' is not a registered entity!`,
+      );
+    }
+    return def;
   }
 
   private getEntityClass<M extends EntityDefinition>(
@@ -281,7 +294,12 @@ export class EasyOrm<
   ): EntityClassConstructor<M> {
     const id = entity as keyof C;
     const entityClass = this.entityClasses[id] as EntityClassConstructor<M>;
-
+    if (!entityClass) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Entity '${entity}' is not a registered entity!`,
+      );
+    }
     return entityClass;
   }
 

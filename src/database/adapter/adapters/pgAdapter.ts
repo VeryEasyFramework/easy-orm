@@ -17,7 +17,46 @@ export interface PostgresConfig {
   camelCase?: boolean;
 }
 export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
-  adaptLoadValue(field: EasyField, value: any) {}
+  adaptLoadValue(field: EasyField, value: any) {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        value = JSON.parse(value);
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      case "TimeStampField":
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
   adaptSaveValue(field: EasyField, value: any) {
     switch (field.fieldType as EasyFieldType) {
       case "BooleanField":
@@ -153,21 +192,22 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     let columns = "*";
     if (options.columns) {
       columns = options.columns.map((column) => {
-        return toSnakeCase(column);
+        return camelToSnakeCase(column);
       }).join(", ");
     }
     let query = `SELECT ${columns} FROM ${tableName}`;
 
     if (options.filter) {
-      for (let [key, value] of Object.entries(options.filter)) {
-        key = camelToSnakeCase(key);
-        query += ` WHERE ${key} = ${value}`;
-      }
+      console.log(options.filter);
+      const keys = Object.keys(options.filter);
+      const filters = keys.map((key) => {
+        const value = options!.filter![key];
+        return `${toSnakeCase(key)} = ${formatValue(value)}`;
+      });
+      console.log(filters);
+      query += ` WHERE ${filters.join(" AND ")}`;
     }
 
-    if (options.offset) {
-      query += ` OFFSET ${options.offset}`;
-    }
     if (options.orderBy) {
       query += ` ORDER BY ${camelToSnakeCase(options.orderBy)}`;
       const order = options.order || "ASC";
@@ -176,6 +216,10 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
     if (options.limit) {
       query += ` LIMIT ${options.limit}`;
+    }
+
+    if (options.offset) {
+      query += ` OFFSET ${options.offset}`;
     }
 
     const result = await this.query<T>(query);

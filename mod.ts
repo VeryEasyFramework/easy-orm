@@ -22,3 +22,4 @@ export type {
   EasyFieldType,
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
+export type { ListOptions } from "#/database/database.ts";

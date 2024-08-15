@@ -92,17 +92,18 @@ class EntityClass {
 
   private parseDatabaseRow(row: Record<string, any>) {
     const data: Record<string, any> = {};
+    ["id", "createdAt", "updatedAt"].forEach((key) => {
+      if (key in row) {
+        data[key] = row[key];
+      }
+    });
     for (const field of this.fields) {
       data[field.key as string] = this.orm.database.adaptLoadValue(
         field,
         row[field.key as string],
       );
     }
-    ["id", "createdAt", "updatedAt"].forEach((key) => {
-      if (key in row) {
-        data[key] = row[key];
-      }
-    });
+
     return data;
   }
 
