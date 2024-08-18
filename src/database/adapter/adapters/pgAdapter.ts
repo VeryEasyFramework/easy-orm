@@ -3,7 +3,7 @@ import {
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
-import { camelToSnakeCase, toSnakeCase } from "@vef/string-utils";
+import { camelToSnakeCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
@@ -201,7 +201,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       const keys = Object.keys(options.filter);
       const filters = keys.map((key) => {
         const value = options!.filter![key];
-        return `${toSnakeCase(key)} = ${formatValue(value)}`;
+        const filter = `${camelToSnakeCase(key)} = ${formatValue(value)}`;
+        return filter;
       });
       query += ` WHERE ${filters.join(" AND ")}`;
     }
