@@ -124,10 +124,10 @@ export class EasyOrm<
       );
 
       for (const fetchField of fetchFields) {
-        if (!connectionFields.includes(fetchField.key)) {
+        if (!connectionFields.includes(fetchField.fetchKey)) {
           raiseOrmException(
             "InvalidField",
-            `Connection field ${fetchField.key} does not exist on entity ${field.connection.entity}`,
+            `Connection field ${fetchField.fetchKey} does not exist on entity ${field.connection.entity}`,
           );
         }
         this.registerFetchField({
@@ -137,7 +137,7 @@ export class EasyOrm<
           },
           target: {
             entity: field.connection.entity,
-            field: fetchField.key,
+            field: fetchField.fetchKey,
           },
         });
       }
@@ -246,6 +246,19 @@ export class EasyOrm<
       options.columns = ["id"];
     }
     const listColumns = entityDef.fields.filter((field) => field.inList);
+    for (const field of entityDef.fields) {
+      if (field.fieldType === "ConnectionField") {
+        field.connection?.fetchFields?.forEach((fetchField) => {
+          if (fetchField.inList) {
+            listColumns.push({
+              key: fetchField.key,
+              fieldType: field.fieldType,
+              label: fetchField.label,
+            });
+          }
+        });
+      }
+    }
     const columns = listColumns.map((column) => column.key) as string[];
     options.columns = options.columns.concat(columns);
     if (!options.limit) {

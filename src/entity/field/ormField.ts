@@ -18,9 +18,11 @@ interface Choice {
  * The fetched field definition for a field in a connected entity.
  */
 export interface FetchedField {
+  fetchKey: string;
   key: string;
   label?: string;
   description?: string;
+  inList?: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export interface FetchedField {
 
 export interface ConnectedField {
   entity: string;
+  titleField?: string;
   fetchFields?: Array<FetchedField>;
 }
 

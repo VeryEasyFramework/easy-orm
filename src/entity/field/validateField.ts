@@ -107,12 +107,16 @@ export function validateData(field: EasyField, value: any): string {
       break;
     case "string":
       break;
+    case null:
+      value = "";
+      break;
     default:
+      value = "";
       raiseOrmException(
         "InvalidValue",
         `Invalid value for DataField ${
           field.label ? field.label : field.key as string
-        }: ${value}. Must be a string of max length 255`,
+        }:P${field.label} ${value}. Must be a string of max length 255`,
       );
   }
   if (value.length > 255) {
