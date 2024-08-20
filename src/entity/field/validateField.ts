@@ -39,8 +39,17 @@ export function validateBoolean(field: EasyField, value: any): boolean {
   return value;
 }
 
-export function validateDate(field: EasyField, value: string | Date): string {
+export function validateDate(
+  field: EasyField,
+  value: string | Date,
+): string | null {
+  if (value === null) {
+    return null;
+  }
   if (typeof value === "string") {
+    if (value === "") {
+      return null;
+    }
     value = new Date(value);
   }
   if (!(value instanceof Date)) {
@@ -51,14 +60,49 @@ export function validateDate(field: EasyField, value: string | Date): string {
       }: ${value}`,
     );
   }
+  if (value.toDateString() === "Invalid Date") {
+    raiseOrmException(
+      "InvalidValue",
+      `Invalid value for DateField ${
+        field.label ? field.label : field.key as string
+      }: ${value}`,
+    );
+  }
   // convert to yyyy-mm-dd
-  return value.toISOString().split("T")[0];
+  value = value.toISOString().split("T")[0];
+
+  return value;
 }
 
-export function validateInt(field: EasyField, value: any): number {
+export function validateTimeStamp(
+  field: EasyField,
+  value: string | Date,
+): number | null {
+  if (value === null) {
+    return null;
+  }
+  value = new Date(value);
+  if (!(value instanceof Date)) {
+    raiseOrmException(
+      "InvalidValue",
+      `Invalid value for TimeStampField ${
+        field.label ? field.label : field.key as string
+      }: ${value}`,
+    );
+  }
+  if (value.toDateString() === "Invalid Date") {
+    return null;
+  }
+  return value.getTime();
+}
+export function validateInt(field: EasyField, value: any): number | null {
+  if (value === null) {
+    return null;
+  }
   if (typeof value === "string") {
     value = parseInt(value);
   }
+
   if (isNaN(value)) {
     raiseOrmException(
       "InvalidValue",
@@ -70,7 +114,10 @@ export function validateInt(field: EasyField, value: any): number {
   return value;
 }
 
-export function validateBigInt(field: EasyField, value: any): bigint {
+export function validateBigInt(field: EasyField, value: any): bigint | null {
+  if (value === null) {
+    return null;
+  }
   if (typeof value === "string") {
     value = BigInt(value);
   }
@@ -101,15 +148,17 @@ export function validateDecimal(field: EasyField, value: any): number {
 }
 
 export function validateData(field: EasyField, value: any): string {
+  if (value === null) {
+    return "";
+  }
+
   switch (typeof value) {
     case "number":
       value = value.toString();
       break;
     case "string":
       break;
-    case null:
-      value = "";
-      break;
+
     default:
       value = "";
       raiseOrmException(
@@ -151,7 +200,10 @@ export function validateEmail(field: EasyField, value: string): string {
   return value;
 }
 
-export function validateJson(field: EasyField, value: any): string {
+export function validateJson(field: EasyField, value: any): string | null {
+  if (value === null) {
+    return null;
+  }
   try {
     switch (typeof value) {
       case "string":

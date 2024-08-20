@@ -27,6 +27,7 @@ import {
   validatePassword,
   validatePhone,
   validateTextField,
+  validateTimeStamp,
 } from "#/entity/field/validateField.ts";
 
 const isEmpty = (value: any) => {
@@ -35,6 +36,7 @@ const isEmpty = (value: any) => {
 class EntityClass {
   private orm!: Orm;
   private fields!: EasyField[];
+
   private meta!: EntityDefinition;
   private _primaryKey?: string;
 
@@ -128,6 +130,7 @@ class EntityClass {
   }
 
   async update(data: Record<string, any>) {
+    data = this.validateFieldTypes(data);
     this._prevData = { ...this._data };
     const mergedData = { ...this._data, ...data };
     await this.validate(mergedData);
@@ -166,6 +169,46 @@ class EntityClass {
     }
     return changedData;
   }
+  private adaptSaveValue(field: EasyField | EasyFieldType, value: any) {
+    return this.orm.database.adaptSaveValue(field, value);
+  }
+
+  private adaptChangedData(changedData: Record<string, any>) {
+    const adaptedData: Record<string, any> = {};
+    for (const key in changedData) {
+      if (key === "updatedAt" || key === "createdAt") {
+        adaptedData[key] = this.adaptSaveValue(
+          "TimeStampField",
+          changedData[key],
+        );
+        continue;
+      }
+      let fieldType: EasyFieldType | undefined;
+      this.fields.forEach((field) => {
+        if (field.key === key) {
+          fieldType = field.fieldType;
+        }
+        if (field.fieldType === "ConnectionField") {
+          field.connection?.fetchFields?.forEach((fetchField) => {
+            if (fetchField.key === key) {
+              fieldType = fetchField.fieldType;
+            }
+          });
+        }
+      });
+
+      if (!fieldType) {
+        raiseOrmException(
+          "InvalidField",
+          `Field ${key} not found in entity ${this.meta.entityId}`,
+        );
+      }
+
+      adaptedData[key] = this.adaptSaveValue(fieldType, changedData[key]);
+    }
+    return adaptedData;
+  }
+
   async save() {
     await this.validate(this._data);
     if (this._isNew) {
@@ -182,7 +225,8 @@ class EntityClass {
       return;
     }
     await this.beforeSave();
-    const changedData = this.getChangedData();
+    let changedData = this.getChangedData();
+    changedData = this.adaptChangedData(changedData);
     await this.orm.database.updateRow(
       this.meta.tableName,
       this.id,
@@ -221,6 +265,7 @@ class EntityClass {
    */
 
   private async syncFetchFields() {
+    // return;
     const entry = this.orm.findInRegistry(this.meta.entityId);
     if (!entry) {
       return;
@@ -230,13 +275,18 @@ class EntityClass {
       const value = this._data[key];
       const oldValue = this._prevData[key];
       if (value === oldValue) {
-        continue;
+        // continue;
       }
       const targets = entry[key];
       for (const target of targets) {
-        await this.orm.batchUpdateField(target.entity, key, value, {
-          [target.field]: this.id,
-        });
+        await this.orm.batchUpdateField(
+          target.entity,
+          target.field as string,
+          value,
+          {
+            [target.idKey]: this.id,
+          },
+        );
       }
     }
   }
@@ -304,6 +354,9 @@ class EntityClass {
       case "PhoneField":
         value = validatePhone(field, value);
         break;
+      case "TimeStampField":
+        value = validateTimeStamp(field, value);
+        break;
       case "ConnectionField":
         raiseOrmException(
           "InvalidFieldType",
@@ -316,7 +369,7 @@ class EntityClass {
           `Field type ${field.fieldType} is not implemented`,
         );
     }
-    value = this.orm.database.adaptSaveValue(field, value);
+
     return value;
   }
 

@@ -51,18 +51,24 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       case "ConnectionField":
         break;
       case "TimeStampField":
+        value = new Date(value).getTime();
         break;
       default:
         break;
     }
     return value;
   }
-  adaptSaveValue(field: EasyField, value: any) {
-    switch (field.fieldType as EasyFieldType) {
+  adaptSaveValue(field: EasyField | EasyFieldType, value: any) {
+    const fieldType = typeof field === "string" ? field : field.fieldType;
+    if (value === null) {
+      return null;
+    }
+    switch (fieldType as EasyFieldType) {
       case "BooleanField":
         break;
       case "DateField":
         break;
+
       case "IntField":
         break;
       case "BigIntField":
@@ -72,7 +78,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       case "DataField":
         break;
       case "JSONField":
-        value = JSON.stringify(value);
+        value = value ? JSON.stringify(value) : null;
         break;
       case "EmailField":
         break;
@@ -91,6 +97,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       case "ConnectionField":
         break;
       case "TimeStampField":
+        value = new Date(value).toISOString();
         break;
       default:
         break;
@@ -239,21 +246,27 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     return result.data[0];
   }
+
+  private makeFilter(filters: Record<string, any>): string {
+    return Object.entries(filters)
+      .map(([key, value]) => {
+        key = camelToSnakeCase(key);
+        return `${key} = ${formatValue(value)}`;
+      })
+      .join(" AND ");
+  }
   async batchUpdateField(
     tableName: string,
     field: string,
     value: any,
     filters: Record<string, any>,
   ): Promise<void> {
-    let query = `UPDATE ${tableName} SET ${field} = ${value}`;
+    let query = `UPDATE ${tableName} SET ${camelToSnakeCase(field)} = ${
+      formatValue(value)
+    }`;
     if (filters) {
       query += " WHERE ";
-      query += Object.entries(filters)
-        .map(([key, value]) => {
-          key = camelToSnakeCase(key);
-          return `${key} = ${value}`;
-        })
-        .join(" AND ");
+      query += this.makeFilter(filters);
     }
     await this.query(query);
   }
@@ -262,6 +275,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 function formatValue(value: any): string {
   if (typeof value === "string") {
     return `'${value}'`;
+  }
+  if (!value) {
+    return "null";
   }
   return value;
 }

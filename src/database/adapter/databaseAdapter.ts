@@ -1,4 +1,5 @@
 import { EasyField } from "#/entity/field/ormField.ts";
+import { EasyFieldType } from "../../../mod.ts";
 import type { ListOptions } from "../database.ts";
 
 export interface RowsResult<T> {
@@ -54,5 +55,5 @@ export abstract class DatabaseAdapter<C> {
   ): Promise<void>;
   abstract adaptLoadValue(field: EasyField, value: any): any;
 
-  abstract adaptSaveValue(field: EasyField, value: any): any;
+  abstract adaptSaveValue(field: EasyField | EasyFieldType, value: any): any;
 }

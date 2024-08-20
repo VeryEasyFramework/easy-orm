@@ -12,6 +12,7 @@ import {
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
+import { EasyFieldType } from "../../mod.ts";
 
 export interface AdvancedFilter {
   op:
@@ -95,7 +96,7 @@ export class Database<
   adaptLoadValue(field: EasyField, value: any) {
     return this.adapter.adaptLoadValue(field, value);
   }
-  adaptSaveValue(field: EasyField, value: any) {
+  adaptSaveValue(field: EasyField | EasyFieldType, value: any) {
     return this.adapter.adaptSaveValue(field, value);
   }
 

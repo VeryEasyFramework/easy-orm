@@ -60,7 +60,9 @@ export function convertToDataType(data: Uint8Array, type: number) {
     case 142:
       return JSON.parse(text);
     case 1184:
-      return new Date(text);
+      return new Date(text).getTime();
+    case 1043:
+      return text;
     default:
       return text;
   }

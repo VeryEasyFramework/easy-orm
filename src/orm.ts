@@ -22,6 +22,7 @@ interface Registry {
   [key: string]: {
     [key: PropertyKey]: {
       entity: string;
+      idKey: PropertyKey;
       field: PropertyKey;
     }[];
   };
@@ -119,10 +120,15 @@ export class EasyOrm<
       );
 
       const fetchFields = field.connection.fetchFields || [];
-      const connectionFields = connectionEntity.fields.map((field) =>
-        field.key
-      );
-
+      const connectionFields: PropertyKey[] = [];
+      connectionEntity.fields.forEach((field) => {
+        connectionFields.push(field.key);
+        if (field.fieldType === "ConnectionField") {
+          field.connection?.fetchFields?.forEach((fetchField) => {
+            connectionFields.push(fetchField.key);
+          });
+        }
+      });
       for (const fetchField of fetchFields) {
         if (!connectionFields.includes(fetchField.fetchKey)) {
           raiseOrmException(
@@ -133,10 +139,12 @@ export class EasyOrm<
         this.registerFetchField({
           source: {
             entity: entity.entityId,
-            field: field.key,
+
+            field: fetchField.key,
           },
           target: {
             entity: field.connection.entity,
+            idKey: field.key,
             field: fetchField.fetchKey,
           },
         });
@@ -146,10 +154,12 @@ export class EasyOrm<
   private registerFetchField(config: {
     source: {
       entity: string;
+
       field: PropertyKey;
     };
     target: {
       entity: string;
+      idKey: PropertyKey;
       field: PropertyKey;
     };
   }) {
@@ -162,6 +172,7 @@ export class EasyOrm<
 
     this.registry[config.target.entity][config.target.field].push({
       entity: config.source.entity,
+      idKey: config.target.idKey,
       field: config.source.field,
     });
   }
@@ -245,6 +256,7 @@ export class EasyOrm<
     if (!options.columns) {
       options.columns = ["id"];
     }
+
     const listColumns = entityDef.fields.filter((field) => field.inList);
     for (const field of entityDef.fields) {
       if (field.fieldType === "ConnectionField") {
@@ -275,7 +287,6 @@ export class EasyOrm<
     filters: Record<string, any>,
   ) {
     const entityDef = this.getEntityDef(entity);
-
     await this.database.batchUpdateField(
       entityDef.tableName,
       field,

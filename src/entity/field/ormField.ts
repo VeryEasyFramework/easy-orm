@@ -20,6 +20,7 @@ interface Choice {
 export interface FetchedField {
   fetchKey: string;
   key: string;
+  fieldType: EasyFieldType;
   label?: string;
   description?: string;
   inList?: boolean;
@@ -77,6 +78,8 @@ export interface EasyField<
    * **DecimalField**: Decimal.
    *
    * **DateField**: Date.
+   *
+   * **TimestampField**: Date and time.
    *
    * **BooleanField**: Boolean.
    *
