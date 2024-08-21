@@ -15,25 +15,14 @@ interface Choice {
 }
 
 /**
- * The fetched field definition for a field in a connected entity.
- */
-export interface FetchedField {
-  fetchKey: string;
-  key: string;
-  fieldType: EasyFieldType;
-  label?: string;
-  description?: string;
-  inList?: boolean;
-}
-
-/**
  * The connected entity definition for a field that's set to `ConnectionField`.
  */
 
-export interface ConnectedField {
-  entity: string;
-  titleField?: string;
-  fetchFields?: Array<FetchedField>;
+export interface FetchOptions {
+  fetchEntity: string; // entity name
+  thisIdKey: string; // local id key
+  thisFieldKey: string; // local field key
+  thatFieldKey: string; // foreign field key
 }
 
 /**
@@ -105,6 +94,8 @@ export interface EasyField<
    */
   fieldType: T;
 
+  fetchOptions?: FetchOptions;
+
   /**
    * Set to true if the field should be included in the default list view.
    */
@@ -120,10 +111,9 @@ export interface EasyField<
    */
   defaultValue?: EasyFieldTypeMap[T] | (() => EasyFieldTypeMap[T]);
 
-  /**
-   * The connected entity and the related fetch fields for the field. Only applicable for ConnectionField.
-   */
-  connection?: ConnectedField;
+  connectionEntity?: string;
+
+  connectionTitleField?: string;
 
   /**
    * Set to true if the field should be unique.

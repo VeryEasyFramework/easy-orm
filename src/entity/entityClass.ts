@@ -188,13 +188,13 @@ class EntityClass {
         if (field.key === key) {
           fieldType = field.fieldType;
         }
-        if (field.fieldType === "ConnectionField") {
-          field.connection?.fetchFields?.forEach((fetchField) => {
-            if (fetchField.key === key) {
-              fieldType = fetchField.fieldType;
-            }
-          });
-        }
+        // if (field.fieldType === "ConnectionField") {
+        //   field.connection?.fetchFields?.forEach((fetchField) => {
+        //     if (fetchField.key === key) {
+        //       fieldType = fetchField.fieldType;
+        //     }
+        //   });
+        // }
       });
 
       if (!fieldType) {
@@ -416,7 +416,7 @@ class EntityClass {
       field.fieldType === "ConnectionField"
     );
     for (const field of connectionFields) {
-      const connectionFields = field.connection!.fetchFields || [];
+      // const connectionFields = field.connection!.fetchFields || [];
       // if it's empty, clear any fetch fields
       if (isEmpty(data[field.key])) {
         for (const fetchField of connectionFields) {
@@ -425,10 +425,10 @@ class EntityClass {
         continue;
       }
 
-      if (!await this.orm.exists(field.connection!.entity, data[field.key])) {
+      if (!await this.orm.exists(field.connectionEntity, data[field.key])) {
         raiseOrmException(
           "EntityNotFound",
-          `Connection ${field.connection!.entity} with id ${
+          `Connection ${field.connectionEntity} with id ${
             data[field.key]
           } does not exist`,
         );
@@ -437,7 +437,7 @@ class EntityClass {
       // Fetch fields
       if (connectionFields.length > 0) {
         const connectionData = await this.orm.getEntity(
-          field.connection!.entity,
+          field.connectionEntity,
           data[field.key],
         );
         for (const connectionField of connectionFields) {

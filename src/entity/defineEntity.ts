@@ -5,6 +5,7 @@ import type {
   EntityDef,
   EntityHooks,
   ExtractEntityFields,
+  FieldKey,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
@@ -19,6 +20,7 @@ export function defineEntity<
   A extends EntityActionRecord<AP>,
 >(entityId: Id, options: {
   label: string;
+  titleField?: FieldKey<F>;
   /**
    * @description The fields of the entity.
    */
