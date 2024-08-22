@@ -233,6 +233,9 @@ export function validateJson(field: EasyField, value: any): string | null {
 }
 
 export function validateTextField(field: EasyField, value: any): string {
+  if (value === null) {
+    return "";
+  }
   switch (typeof value) {
     case "string":
       break;

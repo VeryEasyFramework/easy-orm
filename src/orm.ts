@@ -19,7 +19,7 @@ import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 import { createEntityClass } from "#/entity/entityClass.ts";
 import { raiseOrmException } from "#/ormException.ts";
 import { EasyField } from "#/entity/field/ormField.ts";
-import { toPascalCase } from "@vef/string-utils";
+import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
 interface Registry {
   [key: string]: {
     [key: PropertyKey]: {
@@ -202,8 +202,9 @@ export class EasyOrm<
       return;
     }
     const newkey = `${field.key as string}${
-      toPascalCase(entity.titleField as string)
+      toPascalCase(camelToSnakeCase(entity.titleField as string))
     }`;
+
     const titleField = { ...entityTitleField };
     titleField.readOnly = true;
     titleField.inList = true;

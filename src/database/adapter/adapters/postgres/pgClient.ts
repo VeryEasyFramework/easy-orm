@@ -60,7 +60,7 @@ export class PostgresClient {
     };
   }
   private decode(data: Uint8Array): string {
-    return this.decoder.decode(data);
+    return new TextDecoder().decode(data);
   }
   private async readResponseHeader() {
     const buffer = new Uint8Array(5);
@@ -270,6 +270,7 @@ export class PostgresClient {
       };
       columns.push(column);
     }
+
     return columns;
   }
   async query<T>(
@@ -344,7 +345,12 @@ export class PostgresClient {
           break;
         }
         default: {
-          throw new PgError({ message: "Unknown message type" });
+          const message = this.reader.readAllBytes();
+          const messageType = this.reader.messageType;
+          const messageString = this.decode(message);
+          throw new PgError({
+            message: `Unknown message type ${messageType}${messageString}`,
+          });
         }
       }
     }

@@ -1,4 +1,4 @@
-import {
+import type {
   DataTypeMap,
   ServerStatus,
 } from "#/database/adapter/adapters/postgres/pgTypes.ts";
@@ -21,7 +21,10 @@ export const dataTypeMap: DataTypeMap = {
   30: "oidvector",
   114: "json",
   142: "xml",
+  1043: "varchar",
   1184: "timestamptz",
+  1082: "date",
+  1700: "numeric",
 };
 
 export const statusMap: Record<any, ServerStatus> = {
@@ -63,6 +66,10 @@ export function convertToDataType(data: Uint8Array, type: number) {
       return new Date(text).getTime();
     case 1043:
       return text;
+    case 1082:
+      return text;
+    case 1700:
+      return parseFloat(text);
     default:
       return text;
   }
