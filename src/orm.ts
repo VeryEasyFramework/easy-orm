@@ -159,7 +159,6 @@ export class EasyOrm<
       this.registerFetchField({
         source: {
           entity: entity.entityId,
-
           field: fetchOptions.thisFieldKey,
         },
         target: {
