@@ -69,7 +69,9 @@ export class EasyOrm<
     this.buildEntities();
     this.validateEntities();
   }
-
+  stop() {
+    this.database.stop();
+  }
   entityInfo: EntityDefinition[] = [];
   addEntity(entity: EntityDefinition) {
     if (this.initialized) {

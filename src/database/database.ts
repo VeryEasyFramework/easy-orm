@@ -92,7 +92,9 @@ export class Database<
   async disconnect(): Promise<void> {
     await this.adapter.disconnect();
   }
-
+  stop() {
+    this.adapter.disconnect();
+  }
   adaptLoadValue(field: EasyField, value: any) {
     return this.adapter.adaptLoadValue(field, value);
   }
