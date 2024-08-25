@@ -115,10 +115,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
 
   async connect(): Promise<void> {
-    throw new Error("Method not implemented.");
   }
   async disconnect(): Promise<void> {
-    throw new Error("Method not implemented.");
   }
   async query<T>(query: string): Promise<RowsResult<T>> {
     const result = await this.pool.query<T>(query);
