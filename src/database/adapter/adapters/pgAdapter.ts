@@ -276,6 +276,14 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const result = await this.query<{ columnName: string }>(query);
     const columns = result.data.map((column) => column.columnName);
     const fields = entity.fields;
+    fields.push({
+      key: "updatedAt",
+      fieldType: "TimeStampField",
+    } as EasyField);
+    fields.push({
+      key: "createdAt",
+      fieldType: "TimeStampField",
+    } as EasyField);
     const addedColumns: string[] = [];
     for (const field of fields) {
       const columnName = camelToSnakeCase(field.key);
