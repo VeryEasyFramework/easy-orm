@@ -12,7 +12,8 @@ import {
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
-import { EasyFieldType } from "../../mod.ts";
+import { EntityDefinition } from "#/entity/defineEntityTypes.ts";
+import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export interface AdvancedFilter {
   op:
@@ -91,6 +92,10 @@ export class Database<
   }
   async disconnect(): Promise<void> {
     await this.adapter.disconnect();
+  }
+
+  async migrateEntity(entity: EntityDefinition) {
+    return await this.adapter.syncTable(entity.tableName, entity);
   }
   stop() {
     this.adapter.disconnect();

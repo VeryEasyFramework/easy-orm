@@ -268,6 +268,71 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     await this.query(query);
   }
+  async syncTable(tableName: string, entity: any): Promise<string> {
+    // get the current columns in the table
+    const query =
+      `SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}'`;
+    // return query;
+    const result = await this.query<{ columnName: string }>(query);
+    const columns = result.data.map((column) => column.columnName);
+    const fields = entity.fields;
+    const addedColumns: string[] = [];
+    for (const field of fields) {
+      const columnName = camelToSnakeCase(field.key);
+      if (!columns.includes(columnName)) {
+        // create the column
+        const query = `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${
+          this.getColumnType(
+            field,
+          )
+        }`;
+        await this.query(query);
+        addedColumns.push(columnName);
+      }
+    }
+    if (addedColumns.length === 0) {
+      return "";
+    }
+    return tableName + ":" + addedColumns.join(", ");
+  }
+  getColumnType(field: EasyField): string {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        return "BOOLEAN";
+      case "DateField":
+        return "DATE";
+      case "IntField":
+        return "INTEGER";
+      case "BigIntField":
+        return "BIGINT";
+      case "DecimalField":
+        return "DECIMAL";
+      case "DataField":
+        return "VARCHAR(255)";
+      case "JSONField":
+        return "JSONB";
+      case "EmailField":
+        return "TEXT";
+      case "ImageField":
+        return "TEXT";
+      case "TextField":
+        return "TEXT";
+      case "ChoicesField":
+        return "TEXT";
+      case "MultiChoiceField":
+        return "TEXT";
+      case "PasswordField":
+        return "TEXT";
+      case "PhoneField":
+        return "TEXT";
+      case "ConnectionField":
+        return "TEXT";
+      case "TimeStampField":
+        return "TIMESTAMP";
+      default:
+        return "TEXT";
+    }
+  }
 }
 
 function formatValue(value: any): string {

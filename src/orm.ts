@@ -245,8 +245,17 @@ export class EasyOrm<
       field: config.source.field,
     });
   }
-  migrate() {
-    console.log("Migrating...");
+  async migrate() {
+    const results: string[] = [];
+    for (const entity of this.entityKeys) {
+      const entityDef = this.getEntityDef(entity as Ids);
+      const res = await this.database.migrateEntity(entityDef);
+      if (!res) {
+        continue;
+      }
+      results.push(res);
+    }
+    return results;
   }
 
   findInRegistry(entity: string): Registry[string] | undefined {

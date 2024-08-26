@@ -1,5 +1,6 @@
 import { EasyField } from "#/entity/field/ormField.ts";
 import { EasyFieldType } from "../../../mod.ts";
+import { EntityDefinition } from "#/entity/defineEntityTypes.ts";
 import type { ListOptions } from "../database.ts";
 
 export interface RowsResult<T> {
@@ -22,6 +23,10 @@ export abstract class DatabaseAdapter<C> {
 
   abstract disconnect(): Promise<void>;
 
+  abstract syncTable(
+    tableName: string,
+    entity: EntityDefinition,
+  ): Promise<string>;
   abstract createTable(tableName: string, fields: any): Promise<void>;
 
   abstract dropTable(tableName: string): Promise<void>;
