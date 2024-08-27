@@ -5,12 +5,16 @@ import {
 import type { ListOptions } from "#/database/database.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import { EntityDefinition } from "../../../entity/defineEntityTypes.ts";
 
 export interface JSONConfig {
   dataPath: string;
 }
 export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
-  adaptLoadValue(field: EasyField, value: any) {
+  syncTable(tableName: string, entity: EntityDefinition): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  adaptLoadValue(field: EasyField, value: any): any {
     switch (field.fieldType as EasyFieldType) {
       case "BooleanField":
         break;
@@ -47,7 +51,7 @@ export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
     }
     return value;
   }
-  adaptSaveValue(field: EasyField, value: any) {
+  adaptSaveValue(field: EasyField, value: any): any {
     switch (field.fieldType as EasyFieldType) {
       case "BooleanField":
         break;

@@ -17,7 +17,7 @@ export interface PostgresConfig {
   camelCase?: boolean;
 }
 export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
-  adaptLoadValue(field: EasyField, value: any) {
+  adaptLoadValue(field: EasyField, value: any): any {
     switch (field.fieldType as EasyFieldType) {
       case "BooleanField":
         break;
@@ -58,7 +58,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     return value;
   }
-  adaptSaveValue(field: EasyField | EasyFieldType, value: any) {
+  adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
     const fieldType = typeof field === "string" ? field : field.fieldType;
     if (value === null) {
       return null;

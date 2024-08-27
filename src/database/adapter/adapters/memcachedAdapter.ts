@@ -8,13 +8,17 @@ import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 import { MemcachePool } from "./memcached/mcPool.ts";
 import type { PoolConfig } from "./memcached/mcTypes.ts";
+import { EntityDefinition } from "../../../entity/defineEntityTypes.ts";
 {
 }
 export interface MemcachedConfig extends PoolConfig {
 }
 
 export class MemcachedAdapter extends DatabaseAdapter<MemcachedConfig> {
-  adaptLoadValue(field: EasyField, value: any) {
+  syncTable(tableName: string, entity: EntityDefinition): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  adaptLoadValue(field: EasyField, value: any): any {
     switch (field.fieldType as EasyFieldType) {
       case "BooleanField":
         break;
@@ -51,7 +55,7 @@ export class MemcachedAdapter extends DatabaseAdapter<MemcachedConfig> {
     }
     return value;
   }
-  adaptSaveValue(field: EasyField, value: any) {
+  adaptSaveValue(field: EasyField, value: any): any {
     switch (field.fieldType as EasyFieldType) {
       case "BooleanField":
         break;

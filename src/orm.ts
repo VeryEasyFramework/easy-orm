@@ -249,7 +249,7 @@ export class EasyOrm<
   }
   async migrate(options?: {
     onProgress?: (progress: number, total: number, message: string) => void;
-  }) {
+  }): Promise<string[]> {
     const results: string[] = [];
     const total = this.entityKeys.length;
     const progress = options?.onProgress || (() => {});

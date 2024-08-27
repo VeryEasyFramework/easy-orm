@@ -103,16 +103,16 @@ export class Database<
     await this.adapter.disconnect();
   }
 
-  async migrateEntity(entity: EntityDefinition) {
+  async migrateEntity(entity: EntityDefinition): Promise<string> {
     return await this.adapter.syncTable(entity.tableName, entity);
   }
   stop() {
     this.adapter.disconnect();
   }
-  adaptLoadValue(field: EasyField, value: any) {
+  adaptLoadValue(field: EasyField, value: any): any {
     return this.adapter.adaptLoadValue(field, value);
   }
-  adaptSaveValue(field: EasyField | EasyFieldType, value: any) {
+  adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
     return this.adapter.adaptSaveValue(field, value);
   }
 
