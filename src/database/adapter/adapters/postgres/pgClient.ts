@@ -60,7 +60,15 @@ export class PostgresClient {
     };
   }
   private decode(data: Uint8Array): string {
-    return new TextDecoder().decode(data);
+    const chunkSize = 512;
+    let offset = 0;
+    let message = "";
+    while (offset < data.length) {
+      const chunk = data.subarray(offset, offset + chunkSize);
+      message += this.decoder.decode(chunk);
+      offset += chunkSize;
+    }
+    return message;
   }
   private async readResponseHeader() {
     const buffer = new Uint8Array(5);

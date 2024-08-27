@@ -6,6 +6,7 @@ import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export interface RowsResult<T> {
   rowCount: number;
+  totalCount: number;
   data: T[];
   columns: string[];
 }

@@ -282,7 +282,7 @@ export class EasyOrm<
 
     const entityInstance = new entityClass() as EntityFromDef<R[I]>;
     await entityInstance.load(id);
-    return entityInstance;
+    return entityInstance as EntityFromDef<R[I]>;
   }
 
   /**
@@ -352,6 +352,7 @@ export class EasyOrm<
     if (!options.limit) {
       options.limit = 100;
     }
+
     const result = await this.database.getRows<L>(entityDef.tableName, options);
     return result;
   }

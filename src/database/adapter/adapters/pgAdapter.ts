@@ -126,6 +126,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
     return {
       rowCount: result.rowCount,
+      totalCount: result.rowCount,
       data: result.rows,
       columns: columns,
     };
@@ -187,6 +188,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const result = await this.query(query);
     return result;
   }
+
   async getRows<T>(
     tableName: string,
     options?: ListOptions,
@@ -201,6 +203,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       }).join(", ");
     }
     let query = `SELECT ${columns} FROM ${tableName}`;
+    let countQuery = `SELECT COUNT(*) FROM ${tableName}`;
 
     if (options.filter) {
       const keys = Object.keys(options.filter);
@@ -209,7 +212,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         const filter = `${camelToSnakeCase(key)} = ${formatValue(value)}`;
         return filter;
       });
-      query += ` WHERE ${filters.join(" AND ")}`;
+      const filterQuery = ` WHERE ${filters.join(" AND ")}`;
+      query += filterQuery;
+      countQuery += filterQuery;
     }
 
     if (options.orderBy) {
@@ -227,6 +232,11 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
 
     const result = await this.query<T>(query);
+    result.totalCount = result.rowCount;
+    if (options.limit) {
+      const countResult = await this.query<{ count: number }>(countQuery);
+      result.totalCount = countResult.data[0].count;
+    }
 
     return result;
   }
@@ -345,6 +355,11 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
 function formatValue(value: any): string {
   if (typeof value === "string") {
+    // check if there's already a single quote
+    if (value.includes("'")) {
+      // escape the single quote
+      value = value.replace(/'/g, "''");
+    }
     return `'${value}'`;
   }
   if (!value) {

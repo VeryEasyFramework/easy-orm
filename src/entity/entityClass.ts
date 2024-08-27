@@ -264,7 +264,7 @@ class EntityClass {
    * Fetch Fields Magic
    */
 
-  private async syncFetchFields() {
+  async syncFetchFields() {
     // return;
     const entry = this.orm.findInRegistry(this.meta.entityId);
     if (!entry) {
