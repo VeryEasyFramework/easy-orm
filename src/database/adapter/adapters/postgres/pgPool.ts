@@ -48,7 +48,7 @@ export class PostgresPool {
       this.maxClients = this.size;
     }
     this.lazy = config.lazy || false;
-    this.maxWait = 5000;
+    this.maxWait = 30000;
     for (let i = 0; i < this.size; i++) {
       this.clients.push(new PostgresPoolClient(this.clientConfig));
     }
@@ -85,9 +85,13 @@ export class PostgresPool {
 
   async query<T>(query: string): Promise<QueryResponse<T>> {
     const client = await this.getClient();
-
-    const result = await client.query<T>(query);
-    this.returnClient(client);
-    return result;
+    try {
+      const result = await client.query<T>(query);
+      this.returnClient(client);
+      return result;
+    } catch (e) {
+      this.returnClient(client);
+      throw e;
+    }
   }
 }

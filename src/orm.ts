@@ -18,10 +18,13 @@ import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
 
 import { createEntityClass } from "#/entity/entityClass.ts";
 import { raiseOrmException } from "#/ormException.ts";
+import { EasyField } from "#/entity/field/ormField.ts";
+import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
 interface Registry {
   [key: string]: {
     [key: PropertyKey]: {
       entity: string;
+      idKey: PropertyKey;
       field: PropertyKey;
     }[];
   };
@@ -45,11 +48,13 @@ export class EasyOrm<
   registry: Registry = {};
 
   database: Database<D>;
+  dbType: D;
   constructor(options: {
     entities: E;
     databaseType: D;
     databaseConfig: DatabaseConfig[D];
   }) {
+    this.dbType = options.databaseType;
     this.database = new Database({
       adapter: options.databaseType,
       config: options.databaseConfig,
@@ -63,9 +68,12 @@ export class EasyOrm<
   async init() {
     await this.database.init();
     this.initialized = true;
+    this.buildEntities();
     this.validateEntities();
   }
-
+  stop() {
+    this.database.stop();
+  }
   entityInfo: EntityDefinition[] = [];
   addEntity(entity: EntityDefinition) {
     if (this.initialized) {
@@ -77,79 +85,152 @@ export class EasyOrm<
         `Entity ${entity.entityId} already exists`,
       );
     }
-    this.entityInfo.push(entity);
+
     this.entityKeys.push(entity.entityId);
     // TODO: Add validation for entity definition
     this.entities[entity.entityId as keyof R] = entity as R[keyof R];
-    this.entityClasses[entity.entityId as keyof C] = createEntityClass(
-      entity,
-      this,
-    ) as C[keyof C];
   }
 
+  private buildEntities() {
+    for (const entity of this.entityKeys) {
+      const entityDef = this.getEntityDef(entity as Ids);
+      this.buildConnectionTitleFields(entityDef);
+    }
+  }
   private validateEntities() {
     for (const entity of this.entityKeys) {
       const entityDef = this.getEntityDef(entity as Ids);
       this.validateEntityDef(entityDef);
     }
+    for (const entity of this.entityKeys) {
+      const entityDef = this.getEntityDef(entity as Ids);
+      this.entityClasses[entity as keyof C] = createEntityClass(
+        entityDef,
+        this,
+      ) as C[keyof C];
+    }
   }
 
   private validateEntityDef(entity: EntityDefinition) {
+    this.validateConnectionFields(entity);
     this.validateFetchFields(entity);
+    this.entityInfo.push(entity);
   }
-  private validateFetchFields(entity: EntityDefinition) {
+  private validateConnectionFields(entity: EntityDefinition) {
     const fields = entity.fields.filter((field) =>
       field.fieldType === "ConnectionField"
     );
     for (const field of fields) {
-      if (!field.connection) {
+      if (!field.connectionEntity) {
         raiseOrmException(
           "InvalidConnection",
-          `Connection field ${field.key as string} is missing`,
+          `Connection field ${field
+            .key as string} in ${entity.entityId} is missing connectionEntity `,
         );
       }
-      if (!this.hasEntity(field.connection.entity)) {
+      if (!this.hasEntity(field.connectionEntity)) {
         raiseOrmException(
           "InvalidConnection",
-          `Connection entity ${field.connection.entity} does not exist`,
+          `Connection entity ${field.connectionEntity} does not exist`,
+        );
+      }
+    }
+  }
+  private validateFetchFields(entity: EntityDefinition) {
+    const fields = entity.fields.filter((field) => field.fetchOptions);
+    for (const field of fields) {
+      const fetchOptions = field.fetchOptions!;
+      if (!this.hasEntity(fetchOptions.fetchEntity)) {
+        raiseOrmException(
+          "InvalidConnection",
+          `Connection entity ${fetchOptions.fetchEntity} does not exist`,
         );
       }
       const connectionEntity = this.getEntityDef(
-        field.connection.entity as Ids,
+        fetchOptions.fetchEntity as Ids,
       );
 
-      const fetchFields = field.connection.fetchFields || [];
-      const connectionFields = connectionEntity.fields.map((field) =>
-        field.key
-      );
+      const connectedField = connectionEntity.fields.filter((f) => {
+        return f.key === fetchOptions.thatFieldKey;
+      });
 
-      for (const fetchField of fetchFields) {
-        if (!connectionFields.includes(fetchField.key)) {
-          raiseOrmException(
-            "InvalidField",
-            `Connection field ${fetchField.key} does not exist on entity ${field.connection.entity}`,
-          );
-        }
-        this.registerFetchField({
-          source: {
-            entity: entity.entityId,
-            field: field.key,
-          },
-          target: {
-            entity: field.connection.entity,
-            field: fetchField.key,
-          },
-        });
+      if (!connectedField) {
+        raiseOrmException(
+          "InvalidField",
+          `Connection field ${fetchOptions.thatFieldKey} does not exist on entity ${fetchOptions.fetchEntity}`,
+        );
       }
+      this.registerFetchField({
+        source: {
+          entity: entity.entityId,
+          field: fetchOptions.thisFieldKey,
+        },
+        target: {
+          entity: fetchOptions.fetchEntity,
+          idKey: fetchOptions.thisIdKey,
+          field: fetchOptions.thatFieldKey,
+        },
+      });
     }
+  }
+  private buildConnectionTitleFields(entity: EntityDefinition) {
+    const fields = entity.fields.filter((field) =>
+      field.fieldType === "ConnectionField"
+    ) as EasyField<PropertyKey, "ConnectionField">[];
+    for (const field of fields) {
+      const titleField = this.buildConnectionTitleField(field);
+      if (!titleField) {
+        continue;
+      }
+
+      field.connectionTitleField = titleField.key as string;
+      entity.fields.push(titleField);
+    }
+    // this.entities[entity.entityId as keyof R] = entity as R[keyof R];
+  }
+  private buildConnectionTitleField(
+    field: EasyField,
+  ) {
+    if (!field.connectionEntity) {
+      return;
+    }
+    const entity = this.getEntityDef(field.connectionEntity as Ids);
+    if (!entity.titleField) {
+      return;
+    }
+
+    const entityTitleField = entity.fields.find((field) =>
+      field.key === entity.titleField
+    );
+    if (!entityTitleField) {
+      return;
+    }
+    const newkey = `${field.key as string}${
+      toPascalCase(camelToSnakeCase(entity.titleField as string))
+    }`;
+
+    const titleField = { ...entityTitleField };
+    titleField.readOnly = true;
+    titleField.inList = true;
+    titleField.fetchOptions = {
+      fetchEntity: field.connectionEntity,
+      thisIdKey: field.key as string,
+      thisFieldKey: newkey,
+      thatFieldKey: titleField.key as string,
+    };
+    titleField.key = newkey;
+
+    return titleField;
   }
   private registerFetchField(config: {
     source: {
       entity: string;
+
       field: PropertyKey;
     };
     target: {
       entity: string;
+      idKey: PropertyKey;
       field: PropertyKey;
     };
   }) {
@@ -162,11 +243,29 @@ export class EasyOrm<
 
     this.registry[config.target.entity][config.target.field].push({
       entity: config.source.entity,
+      idKey: config.target.idKey,
       field: config.source.field,
     });
   }
-  migrate() {
-    console.log("Migrating...");
+  async migrate(options?: {
+    onProgress?: (progress: number, total: number, message: string) => void;
+  }): Promise<string[]> {
+    const results: string[] = [];
+    const total = this.entityKeys.length;
+    const progress = options?.onProgress || (() => {});
+
+    let count = 0;
+    progress(count, total, "Starting migration");
+    for (const entity of this.entityKeys) {
+      const entityDef = this.getEntityDef(entity as Ids);
+      const res = await this.database.migrateEntity(entityDef);
+      progress(++count, total, `Migrated ${entityDef.entityId}`);
+      if (!res) {
+        continue;
+      }
+      results.push(res);
+    }
+    return results;
   }
 
   findInRegistry(entity: string): Registry[string] | undefined {
@@ -235,7 +334,21 @@ export class EasyOrm<
     options?: ListOptions,
   ): Promise<RowsResult<L>> {
     const entityDef = this.getEntityDef(entity);
+    if (!entityDef) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Entity '${entity as string}' is not a registered entity!`,
+      );
+    }
     options = options || {};
+    if (!options.columns) {
+      options.columns = ["id"];
+    }
+
+    const listColumns = entityDef.fields.filter((field) => field.inList);
+
+    const columns = listColumns.map((column) => column.key) as string[];
+    options.columns = options.columns.concat(columns);
     if (!options.limit) {
       options.limit = 100;
     }
@@ -250,7 +363,6 @@ export class EasyOrm<
     filters: Record<string, any>,
   ) {
     const entityDef = this.getEntityDef(entity);
-
     await this.database.batchUpdateField(
       entityDef.tableName,
       field,
@@ -267,7 +379,14 @@ export class EasyOrm<
   >(
     entity: I,
   ): M {
-    return this.entities[entity] as M;
+    const def = this.entities[entity] as M;
+    if (!def) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Entity '${entity as string}' is not a registered entity!`,
+      );
+    }
+    return def;
   }
 
   private getEntityClass<M extends EntityDefinition>(
@@ -275,7 +394,12 @@ export class EasyOrm<
   ): EntityClassConstructor<M> {
     const id = entity as keyof C;
     const entityClass = this.entityClasses[id] as EntityClassConstructor<M>;
-
+    if (!entityClass) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Entity '${entity}' is not a registered entity!`,
+      );
+    }
     return entityClass;
   }
 

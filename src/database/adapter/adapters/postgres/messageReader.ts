@@ -13,7 +13,7 @@ export class MessageReader {
 
   constructor(conn: Deno.Conn) {
     this.offset = 0;
-    this.size = 1024;
+    this.size = 4098;
 
     this.conn = conn;
     this.headerBuffer = new Uint8Array(5);

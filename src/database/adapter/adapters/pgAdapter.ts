@@ -3,10 +3,12 @@ import {
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
-import { camelToSnakeCase, toSnakeCase } from "@vef/string-utils";
+import { camelToSnakeCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export interface PostgresConfig {
   clientOptions: PgClientConfig;
@@ -15,6 +17,93 @@ export interface PostgresConfig {
   camelCase?: boolean;
 }
 export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
+  adaptLoadValue(field: EasyField, value: any): any {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        value = JSON.parse(value);
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      case "TimeStampField":
+        value = new Date(value).getTime();
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
+  adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
+    const fieldType = typeof field === "string" ? field : field.fieldType;
+    if (value === null) {
+      return null;
+    }
+    switch (fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        value = value ? JSON.stringify(value) : null;
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      case "TimeStampField":
+        value = new Date(value).toISOString();
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
   private pool!: PostgresPool;
   camelCase: boolean = false;
 
@@ -26,10 +115,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
 
   async connect(): Promise<void> {
-    throw new Error("Method not implemented.");
   }
   async disconnect(): Promise<void> {
-    throw new Error("Method not implemented.");
   }
   async query<T>(query: string): Promise<RowsResult<T>> {
     const result = await this.pool.query<T>(query);
@@ -50,23 +137,18 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async dropTable(tableName: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
   async insert(
     tableName: string,
     id: string,
     data: Record<string, any>,
   ): Promise<any> {
-    const columns = Object.keys(data).map((key) => camelToSnakeCase(key));
-    const values = Object.values(data).map((value) => {
-      if (typeof value === "string") {
-        return `'${value}'`;
-      }
-      return value;
-    });
-    const query = `INSERT INTO ${tableName} (${
-      columns.join(
-        ", ",
-      )
-    }) VALUES (${values.join(", ")})`;
+    const columns = this.getColumns(data);
+    const values = this.getValues(data);
+    const valuesWithColumns = columns.join(", ");
+    const valuesString = values.join(", ");
+    const query =
+      `INSERT INTO ${tableName} (${valuesWithColumns}) VALUES (${valuesString}) RETURNING *`;
     const result = await this.query(query);
     return result;
   }
@@ -75,18 +157,32 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const query = `DELETE FROM ${tableName} WHERE ${field} = ${value}`;
     await this.query(query);
   }
+  private getColumns(data: Record<string, any>): string[] {
+    return Object.keys(data).map((key) => camelToSnakeCase(key));
+  }
+  private getValues(data: Record<string, any>): string[] {
+    const values = Object.values(data);
+    return values.map((value) => {
+      if (typeof value === "string") {
+        return `'${value}'`;
+      }
+      return value;
+    });
+  }
   async update(
     tableName: string,
     id: string,
-    fields: Record<string, any>,
+    data: Record<string, any>,
   ): Promise<any> {
+    const columns = this.getColumns(data);
+    const values = this.getValues(data);
+    const valuesWithColumns = columns.map((column, index) => {
+      return `${column} = ${values[index]}`;
+    });
     const query = `UPDATE ${tableName} SET ${
-      Object.entries(fields)
-        .map(([key, value]) => {
-          key = camelToSnakeCase(key);
-          return `${key} = ${value}`;
-        })
-        .join(", ")
+      valuesWithColumns.join(
+        ", ",
+      )
     } WHERE id = ${id}`;
     const result = await this.query(query);
     return result;
@@ -95,25 +191,39 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
-    let query = `SELECT * FROM ${tableName}`;
-    if (options?.filter) {
-      for (let [key, value] of Object.entries(options.filter)) {
-        key = camelToSnakeCase(key);
-        query += ` WHERE ${key} = ${value}`;
-      }
+    if (!options) {
+      options = {} as ListOptions;
+    }
+    let columns = "*";
+    if (options.columns) {
+      columns = options.columns.map((column) => {
+        return camelToSnakeCase(column);
+      }).join(", ");
+    }
+    let query = `SELECT ${columns} FROM ${tableName}`;
+
+    if (options.filter) {
+      const keys = Object.keys(options.filter);
+      const filters = keys.map((key) => {
+        const value = options!.filter![key];
+        const filter = `${camelToSnakeCase(key)} = ${formatValue(value)}`;
+        return filter;
+      });
+      query += ` WHERE ${filters.join(" AND ")}`;
     }
 
-    if (options?.offset) {
-      query += ` OFFSET ${options.offset}`;
-    }
-    if (options?.orderBy) {
+    if (options.orderBy) {
       query += ` ORDER BY ${camelToSnakeCase(options.orderBy)}`;
       const order = options.order || "ASC";
       query += ` ${order}`;
     }
 
-    if (options?.limit) {
+    if (options.limit) {
       query += ` LIMIT ${options.limit}`;
+    }
+
+    if (options.offset) {
+      query += ` OFFSET ${options.offset}`;
     }
 
     const result = await this.query<T>(query);
@@ -134,29 +244,111 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     return result.data[0];
   }
+
+  private makeFilter(filters: Record<string, any>): string {
+    return Object.entries(filters)
+      .map(([key, value]) => {
+        key = camelToSnakeCase(key);
+        return `${key} = ${formatValue(value)}`;
+      })
+      .join(" AND ");
+  }
   async batchUpdateField(
     tableName: string,
     field: string,
     value: any,
     filters: Record<string, any>,
   ): Promise<void> {
-    let query = `UPDATE ${tableName} SET ${field} = ${value}`;
+    let query = `UPDATE ${tableName} SET ${camelToSnakeCase(field)} = ${
+      formatValue(value)
+    }`;
     if (filters) {
       query += " WHERE ";
-      query += Object.entries(filters)
-        .map(([key, value]) => {
-          key = camelToSnakeCase(key);
-          return `${key} = ${value}`;
-        })
-        .join(" AND ");
+      query += this.makeFilter(filters);
     }
     await this.query(query);
+  }
+  async syncTable(tableName: string, entity: any): Promise<string> {
+    // get the current columns in the table
+    const query =
+      `SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}'`;
+    // return query;
+    const result = await this.query<{ columnName: string }>(query);
+    const columns = result.data.map((column) => column.columnName);
+    const fields = entity.fields;
+    fields.push({
+      key: "updatedAt",
+      fieldType: "TimeStampField",
+    } as EasyField);
+    fields.push({
+      key: "createdAt",
+      fieldType: "TimeStampField",
+    } as EasyField);
+    const addedColumns: string[] = [];
+    for (const field of fields) {
+      const columnName = camelToSnakeCase(field.key);
+      if (!columns.includes(columnName)) {
+        // create the column
+        const query = `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${
+          this.getColumnType(
+            field,
+          )
+        }`;
+        await this.query(query);
+        addedColumns.push(columnName);
+      }
+    }
+    if (addedColumns.length === 0) {
+      return "";
+    }
+    return tableName + ":" + addedColumns.join(", ");
+  }
+  getColumnType(field: EasyField): string {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        return "BOOLEAN";
+      case "DateField":
+        return "DATE";
+      case "IntField":
+        return "INTEGER";
+      case "BigIntField":
+        return "BIGINT";
+      case "DecimalField":
+        return "DECIMAL";
+      case "DataField":
+        return "VARCHAR(255)";
+      case "JSONField":
+        return "JSONB";
+      case "EmailField":
+        return "TEXT";
+      case "ImageField":
+        return "TEXT";
+      case "TextField":
+        return "TEXT";
+      case "ChoicesField":
+        return "TEXT";
+      case "MultiChoiceField":
+        return "TEXT";
+      case "PasswordField":
+        return "TEXT";
+      case "PhoneField":
+        return "TEXT";
+      case "ConnectionField":
+        return "TEXT";
+      case "TimeStampField":
+        return "TIMESTAMP";
+      default:
+        return "TEXT";
+    }
   }
 }
 
 function formatValue(value: any): string {
   if (typeof value === "string") {
     return `'${value}'`;
+  }
+  if (!value) {
+    return "null";
   }
   return value;
 }

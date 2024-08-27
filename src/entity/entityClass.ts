@@ -6,10 +6,29 @@ import type {
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
-import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type {
+  EasyFieldType,
+  EasyFieldTypeMap,
+} from "#/entity/field/fieldTypes.ts";
 import { now } from "#/utils/dateUtils.ts";
 import { generateId } from "#/utils/misc.ts";
 import { raiseOrmException } from "#/ormException.ts";
+import {
+  validateBigInt,
+  validateBoolean,
+  validateChoices,
+  validateData,
+  validateDate,
+  validateDecimal,
+  validateEmail,
+  validateInt,
+  validateJson,
+  validateMultiChoices,
+  validatePassword,
+  validatePhone,
+  validateTextField,
+  validateTimeStamp,
+} from "#/entity/field/validateField.ts";
 
 const isEmpty = (value: any) => {
   return value === null || value === undefined || value === "";
@@ -17,6 +36,7 @@ const isEmpty = (value: any) => {
 class EntityClass {
   private orm!: Orm;
   private fields!: EasyField[];
+
   private meta!: EntityDefinition;
   private _primaryKey?: string;
 
@@ -38,13 +58,6 @@ class EntityClass {
       return this._data[this.primaryKey];
     }
     return this._data.id;
-  }
-  set id(value: EasyFieldTypeMap["IDField"]) {
-    if (this.primaryKey) {
-      this._data[this.primaryKey] = value;
-      return;
-    }
-    this._data.id = value;
   }
 
   get createdAt(): EasyFieldTypeMap["DateField"] {
@@ -71,26 +84,53 @@ class EntityClass {
   }
   async load(id: EasyFieldTypeMap["IDField"]) {
     const idKey = this.primaryKey || "id";
-    this._data = await this.orm.database.getRow(
+    const result = await this.orm.database.getRow(
       this.meta.tableName,
       idKey,
       id,
     ) as Record<string, any>;
+    this._data = this.parseDatabaseRow(result);
+  }
+
+  private parseDatabaseRow(row: Record<string, any>) {
+    const data: Record<string, any> = {};
+    ["id", "createdAt", "updatedAt"].forEach((key) => {
+      if (key in row) {
+        data[key] = row[key];
+      }
+    });
+    for (const field of this.fields) {
+      data[field.key as string] = this.orm.database.adaptLoadValue(
+        field,
+        row[field.key as string],
+      );
+    }
+
+    return data;
+  }
+
+  async delete() {
+    if (!this.id) {
+      raiseOrmException("InvalidId", "Cannot delete entity without an id");
+    }
+    const idKey = this.primaryKey || "id";
+    await this.orm.database.deleteRow(this.meta.tableName, idKey, this.id);
   }
 
   async _validate() {}
 
   async validate(data: Record<string, any>) {
     data = this.dropExtraFields(data);
-    data = this.setDefaultValues(data);
+    data = this.validateFieldTypes(data);
     data = await this.validateConnections(data);
 
     this._data = data;
-    this.setId();
+    this.setIdIfNew();
     await this._validate();
   }
 
   async update(data: Record<string, any>) {
+    data = this.validateFieldTypes(data);
     this._prevData = { ...this._data };
     const mergedData = { ...this._data, ...data };
     await this.validate(mergedData);
@@ -98,6 +138,7 @@ class EntityClass {
 
   async _beforeInsert() {}
   async beforeInsert() {
+    this._data = this.setDefaultValues(this._data);
     await this._beforeInsert();
     this.setCreatedAt();
   }
@@ -128,6 +169,46 @@ class EntityClass {
     }
     return changedData;
   }
+  private adaptSaveValue(field: EasyField | EasyFieldType, value: any) {
+    return this.orm.database.adaptSaveValue(field, value);
+  }
+
+  private adaptChangedData(changedData: Record<string, any>) {
+    const adaptedData: Record<string, any> = {};
+    for (const key in changedData) {
+      if (key === "updatedAt" || key === "createdAt") {
+        adaptedData[key] = this.adaptSaveValue(
+          "TimeStampField",
+          changedData[key],
+        );
+        continue;
+      }
+      let fieldType: EasyFieldType | undefined;
+      this.fields.forEach((field) => {
+        if (field.key === key) {
+          fieldType = field.fieldType;
+        }
+        // if (field.fieldType === "ConnectionField") {
+        //   field.connection?.fetchFields?.forEach((fetchField) => {
+        //     if (fetchField.key === key) {
+        //       fieldType = fetchField.fieldType;
+        //     }
+        //   });
+        // }
+      });
+
+      if (!fieldType) {
+        raiseOrmException(
+          "InvalidField",
+          `Field ${key} not found in entity ${this.meta.entityId}`,
+        );
+      }
+
+      adaptedData[key] = this.adaptSaveValue(fieldType, changedData[key]);
+    }
+    return adaptedData;
+  }
+
   async save() {
     await this.validate(this._data);
     if (this._isNew) {
@@ -144,7 +225,8 @@ class EntityClass {
       return;
     }
     await this.beforeSave();
-    const changedData = this.getChangedData();
+    let changedData = this.getChangedData();
+    changedData = this.adaptChangedData(changedData);
     await this.orm.database.updateRow(
       this.meta.tableName,
       this.id,
@@ -167,10 +249,14 @@ class EntityClass {
     this.updatedAt = now();
   }
 
-  private setId() {
+  private setIdIfNew() {
     if (!this.id) {
       this._isNew = true;
-      this.id = generateId();
+      if (this.primaryKey) {
+        this._data[this.primaryKey] = generateId();
+        return;
+      }
+      this._data.id = generateId();
     }
   }
 
@@ -179,6 +265,7 @@ class EntityClass {
    */
 
   private async syncFetchFields() {
+    // return;
     const entry = this.orm.findInRegistry(this.meta.entityId);
     if (!entry) {
       return;
@@ -188,13 +275,18 @@ class EntityClass {
       const value = this._data[key];
       const oldValue = this._prevData[key];
       if (value === oldValue) {
-        continue;
+        // continue;
       }
       const targets = entry[key];
       for (const target of targets) {
-        await this.orm.batchUpdateField(target.entity, key, value, {
-          [target.field]: this.id,
-        });
+        await this.orm.batchUpdateField(
+          target.entity,
+          target.field as string,
+          value,
+          {
+            [target.idKey]: this.id,
+          },
+        );
       }
     }
   }
@@ -202,6 +294,84 @@ class EntityClass {
   /**
    * Validation Section
    */
+
+  private validateFieldTypes(data: Record<string, any>) {
+    for (const field of this.fields) {
+      if (field.fieldType === "ConnectionField") {
+        continue;
+      }
+      if (!(field.key in data)) {
+        continue;
+      }
+      let value = data[field.key as string];
+      value = this.validateField(field, value);
+      data[field.key as string] = value;
+    }
+    return data;
+  }
+
+  private validateField(field: EasyField, value: any) {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        value = validateBoolean(field, value);
+        break;
+      case "DateField":
+        value = validateDate(field, value);
+        break;
+      case "IntField":
+        value = validateInt(field, value);
+        break;
+      case "BigIntField":
+        value = validateBigInt(field, value);
+        break;
+      case "DecimalField":
+        value = validateDecimal(field, value);
+        break;
+      case "DataField":
+        value = validateData(field, value);
+        break;
+      case "JSONField":
+        value = validateJson(field, value);
+        break;
+      case "EmailField":
+        value = validateEmail(field, value);
+        break;
+      case "ImageField":
+        raiseOrmException("NotImplemented", "ImageField is not supported yet");
+        break;
+      case "TextField":
+        value = validateTextField(field, value);
+        break;
+      case "ChoicesField":
+        value = validateChoices(field, value);
+        break;
+      case "MultiChoiceField":
+        value = validateMultiChoices(field, value);
+        break;
+      case "PasswordField":
+        value = validatePassword(field, value);
+        break;
+      case "PhoneField":
+        value = validatePhone(field, value);
+        break;
+      case "TimeStampField":
+        value = validateTimeStamp(field, value);
+        break;
+      case "ConnectionField":
+        raiseOrmException(
+          "InvalidFieldType",
+          `ConnectionField ${field.key as string} must be handled separately`,
+        );
+        break;
+      default:
+        raiseOrmException(
+          "NotImplemented",
+          `Field type ${field.fieldType} is not implemented`,
+        );
+    }
+
+    return value;
+  }
 
   private dropExtraFields(data: Record<string, any>) {
     const fields = this.fields.map((field) => field.key);
@@ -246,7 +416,7 @@ class EntityClass {
       field.fieldType === "ConnectionField"
     );
     for (const field of connectionFields) {
-      const connectionFields = field.connection!.fetchFields || [];
+      // const connectionFields = field.connection!.fetchFields || [];
       // if it's empty, clear any fetch fields
       if (isEmpty(data[field.key])) {
         for (const fetchField of connectionFields) {
@@ -255,10 +425,10 @@ class EntityClass {
         continue;
       }
 
-      if (!await this.orm.exists(field.connection!.entity, data[field.key])) {
+      if (!await this.orm.exists(field.connectionEntity, data[field.key])) {
         raiseOrmException(
           "EntityNotFound",
-          `Connection ${field.connection!.entity} with id ${
+          `Connection ${field.connectionEntity} with id ${
             data[field.key]
           } does not exist`,
         );
@@ -267,7 +437,7 @@ class EntityClass {
       // Fetch fields
       if (connectionFields.length > 0) {
         const connectionData = await this.orm.getEntity(
-          field.connection!.entity,
+          field.connectionEntity,
           data[field.key],
         );
         for (const connectionField of connectionFields) {
@@ -304,9 +474,6 @@ export function createEntityClass<
         writable: false,
       });
       entityDef.fields.forEach((field) => {
-        if (field.primaryKey) {
-          this.primaryKey = field.key as string;
-        }
         Object.defineProperty(this, field.key, {
           get: function () {
             return this._data[field.key];

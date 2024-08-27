@@ -1,13 +1,93 @@
 import {
   DatabaseAdapter,
-  RowsResult,
+  type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
-import { ListOptions } from "#/database/database.ts";
+import type { ListOptions } from "#/database/database.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import { EntityDefinition } from "../../../entity/defineEntityTypes.ts";
 
 export interface JSONConfig {
   dataPath: string;
 }
 export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
+  syncTable(tableName: string, entity: EntityDefinition): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  adaptLoadValue(field: EasyField, value: any): any {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
+  adaptSaveValue(field: EasyField, value: any): any {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
   init(): Promise<void> | void {
     this.createDataPath();
   }

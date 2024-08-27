@@ -34,7 +34,10 @@ export interface DataTypeMap {
   30: "oidvector";
   114: "json";
   142: "xml";
+  1043: "varchar";
   1184: "timestamptz";
+  1082: "date";
+  1700: "numeric";
 }
 export interface ColumnDescription {
   name: string;

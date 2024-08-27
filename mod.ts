@@ -22,3 +22,14 @@ export type {
   EasyFieldType,
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
+export type { ListOptions } from "#/database/database.ts";
+export type { AdapterMap } from "#/database/database.ts";
+export type {
+  AdvancedFilter,
+  DatabaseConfig,
+  DBType,
+} from "#/database/database.ts";
+export type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
+export type { PostgresConfig } from "#/database/adapter/adapters/pgAdapter.ts";
+export type { JSONConfig } from "#/database/adapter/adapters/jsonAdapter.ts";
+export type { MemcachedConfig } from "#/database/adapter/adapters/memcachedAdapter.ts";

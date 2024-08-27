@@ -3,14 +3,95 @@ import {
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
 import type { ListOptions } from "#/database/database.ts";
+import { EasyField } from "#/entity/field/ormField.ts";
+import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+
 import { MemcachePool } from "./memcached/mcPool.ts";
 import type { PoolConfig } from "./memcached/mcTypes.ts";
+import { EntityDefinition } from "../../../entity/defineEntityTypes.ts";
 {
 }
 export interface MemcachedConfig extends PoolConfig {
 }
 
 export class MemcachedAdapter extends DatabaseAdapter<MemcachedConfig> {
+  syncTable(tableName: string, entity: EntityDefinition): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  adaptLoadValue(field: EasyField, value: any): any {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
+  adaptSaveValue(field: EasyField, value: any): any {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
   private pool!: MemcachePool;
 
   init(): void {

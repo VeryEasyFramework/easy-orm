@@ -34,6 +34,8 @@ export type ExtractEntityFields<F extends EasyField[]> = {
   [K in F[number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
 };
 
+export type FieldKey<F extends EasyField[]> = F[number]["key"];
+
 export type EntityDef<
   Id extends string,
   P extends PropertyKey,
@@ -43,6 +45,7 @@ export type EntityDef<
   A extends EntityActionRecord<AP>,
 > = {
   entityId: Id;
+  titleField?: FieldKey<F>;
   primaryKey?: string;
   label: string;
   fields: F;

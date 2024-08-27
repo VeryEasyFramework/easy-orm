@@ -11,25 +11,52 @@ import {
   type JSONConfig,
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
-import { generateRandomString } from "@vef/string-utils";
+import type { EasyField } from "#/entity/field/ormField.ts";
+import { EntityDefinition } from "#/entity/defineEntityTypes.ts";
+import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import {
+  DenoKvAdapter,
+  DenoKvConfig,
+} from "#/database/adapter/adapters/denoKvAdapter.ts";
 
-export type ListOptions = {
-  filter?: Record<string, any>;
+export interface AdvancedFilter {
+  op:
+    | "contains"
+    | "not contains"
+    | "in list"
+    | "not in list"
+    | "between"
+    | "not between"
+    | "is"
+    | "is not"
+    | ">"
+    | "<"
+    | ">="
+    | "<=";
+  value: any;
+}
+export interface ListOptions {
+  columns?: string[];
+  filter?: Record<string, string | number | AdvancedFilter>;
   limit?: number;
   offset?: number;
   orderBy?: string;
   order?: "asc" | "desc";
-};
+}
 export interface DatabaseConfig {
   postgres: PostgresConfig;
   memcached: MemcachedConfig;
   json: JSONConfig;
+  denoKv: DenoKvConfig;
 }
+
+export type DBType = keyof DatabaseConfig;
 
 export interface AdapterMap {
   "postgres": PostgresAdapter;
   "memcached": MemcachedAdapter;
   "json": JSONAdapter;
+  "denoKv": DenoKvAdapter;
 }
 
 type ExtractConfig<A extends keyof DatabaseConfig> = A extends
@@ -38,7 +65,7 @@ type ExtractConfig<A extends keyof DatabaseConfig> = A extends
 export class Database<
   A extends keyof DatabaseConfig,
 > {
-  adapter: DatabaseAdapter<any>;
+  adapter: DatabaseAdapter<DatabaseConfig[keyof DatabaseConfig]>;
 
   private config: DatabaseConfig[A];
 
@@ -48,18 +75,19 @@ export class Database<
   }) {
     this.config = options.config;
     switch (options.adapter) {
-      case "postgres": {
+      case "postgres":
         this.adapter = new PostgresAdapter(options.config as PostgresConfig);
         break;
-      }
-      case "memcached": {
+      case "memcached":
         this.adapter = new MemcachedAdapter(options.config as MemcachedConfig);
         break;
-      }
-      case "json": {
+      case "json":
         this.adapter = new JSONAdapter(options.config as JSONConfig);
         break;
-      }
+      case "denoKv":
+        this.adapter = new DenoKvAdapter(options.config as DenoKvConfig);
+        break;
+
       default:
         throw new Error("Invalid adapter");
     }
@@ -73,6 +101,19 @@ export class Database<
   }
   async disconnect(): Promise<void> {
     await this.adapter.disconnect();
+  }
+
+  async migrateEntity(entity: EntityDefinition): Promise<string> {
+    return await this.adapter.syncTable(entity.tableName, entity);
+  }
+  stop() {
+    this.adapter.disconnect();
+  }
+  adaptLoadValue(field: EasyField, value: any): any {
+    return this.adapter.adaptLoadValue(field, value);
+  }
+  adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
+    return this.adapter.adaptSaveValue(field, value);
   }
 
   async createTable(tableName: string, fields: any): Promise<void> {
@@ -102,6 +143,12 @@ export class Database<
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
+    if (options?.filter) {
+      const keys = Object.keys(options.filter);
+      if (keys.length == 0) {
+        options.filter = undefined;
+      }
+    }
     return await this.adapter.getRows(tableName, options);
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
