@@ -1,21 +1,22 @@
 {
   "name": "@vef/easy-orm",
-  "version": "0.1.24",
+  "version": "0.2.0",
   "exports": "./mod.ts",
 
   "publish": {
     "exclude": [
-      "dev"
+      "dev",
+      ".github"
     ]
   },
   "tasks": {
     "dev": "deno run --allow-all dev/main.ts",
-    "check": "deno publish --dry-run"
+    "check": "deno publish --dry-run",
+    "update": "deno add @vef/easy-cli @vef/string-utils"
   },
   "imports": {
     "#/": "./src/",
-    "@vef/deno-memcached": "jsr:@vef/deno-memcached@^0.1.1",
-    "@vef/easy-cli": "jsr:@vef/easy-cli@^0.1.15",
-    "@vef/string-utils": "jsr:@vef/string-utils@^0.1.3"
+    "@vef/easy-cli": "jsr:@vef/easy-cli@^0.2.0",
+    "@vef/string-utils": "jsr:@vef/string-utils@^0.1.5"
   }
 }
