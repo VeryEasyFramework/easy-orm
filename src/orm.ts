@@ -48,11 +48,13 @@ export class EasyOrm<
   registry: Registry = {};
 
   database: Database<D>;
+  dbType: D;
   constructor(options: {
     entities: E;
     databaseType: D;
     databaseConfig: DatabaseConfig[D];
   }) {
+    this.dbType = options.databaseType;
     this.database = new Database({
       adapter: options.databaseType,
       config: options.databaseConfig,
@@ -245,11 +247,19 @@ export class EasyOrm<
       field: config.source.field,
     });
   }
-  async migrate() {
+  async migrate(options?: {
+    onProgress?: (progress: number, total: number, message: string) => void;
+  }) {
     const results: string[] = [];
+    const total = this.entityKeys.length;
+    const progress = options?.onProgress || (() => {});
+
+    let count = 0;
+    progress(count, total, "Starting migration");
     for (const entity of this.entityKeys) {
       const entityDef = this.getEntityDef(entity as Ids);
       const res = await this.database.migrateEntity(entityDef);
+      progress(++count, total, `Migrated ${entityDef.entityId}`);
       if (!res) {
         continue;
       }

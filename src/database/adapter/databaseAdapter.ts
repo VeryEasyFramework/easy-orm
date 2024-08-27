@@ -1,7 +1,8 @@
-import { EasyField } from "#/entity/field/ormField.ts";
-import { EasyFieldType } from "../../../mod.ts";
-import { EntityDefinition } from "#/entity/defineEntityTypes.ts";
-import type { ListOptions } from "../database.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
+
+import type { EntityDefinition } from "#/entity/defineEntityTypes.ts";
+import type * as databaseTs from "#/database/database.ts";
+import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export interface RowsResult<T> {
   rowCount: number;
@@ -47,7 +48,7 @@ export abstract class DatabaseAdapter<C> {
 
   abstract getRows<T>(
     tableName: string,
-    options?: ListOptions,
+    options?: databaseTs.ListOptions,
   ): Promise<RowsResult<T>>;
 
   abstract getRow<T>(tableName: string, field: string, value: any): Promise<T>;
