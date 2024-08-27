@@ -152,6 +152,7 @@ export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
     if (data.length === 0) {
       return {
         rowCount: 0,
+        totalCount: 0,
         data: [],
         columns: [],
       };
@@ -163,6 +164,7 @@ export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
     }
     return {
       rowCount: data.length,
+      totalCount: data.length,
       data: data,
       columns: Object.keys(data[0]),
     };
