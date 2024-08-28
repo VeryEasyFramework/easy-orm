@@ -94,6 +94,14 @@ export interface EasyField<
    */
   fieldType: T;
 
+  /**
+   * Set to true if the field is the primary key of the entity.
+   */
+  primaryKey?: boolean;
+
+  /**
+   * The fetch options for the field. Only applicable for ConnectionField.
+   */
   fetchOptions?: FetchOptions;
 
   /**

@@ -1,9 +1,10 @@
 import type { ListOptions } from "../../database.ts";
 import {
+  type AdapterColumn,
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
-import { camelToSnakeCase } from "@vef/string-utils";
+import { camelToSnakeCase, toCamelCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
@@ -15,97 +16,29 @@ export interface PostgresConfig {
   size: number;
   lazy?: boolean;
   camelCase?: boolean;
+  schema?: string;
+}
+
+interface PostgresColumn {
+  columnName: string;
+  dataType: string;
+  columnDefault: any;
+  isNullable: string;
+  isIdentity: string;
 }
 export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
-  adaptLoadValue(field: EasyField, value: any): any {
-    switch (field.fieldType as EasyFieldType) {
-      case "BooleanField":
-        break;
-      case "DateField":
-        break;
-      case "IntField":
-        break;
-      case "BigIntField":
-        break;
-      case "DecimalField":
-        break;
-      case "DataField":
-        break;
-      case "JSONField":
-        value = JSON.parse(value);
-        break;
-      case "EmailField":
-        break;
-      case "ImageField":
-        break;
-      case "TextField":
-        break;
-      case "ChoicesField":
-        break;
-      case "MultiChoiceField":
-        break;
-      case "PasswordField":
-        break;
-      case "PhoneField":
-        break;
-      case "ConnectionField":
-        break;
-      case "TimeStampField":
-        value = new Date(value).getTime();
-        break;
-      default:
-        break;
-    }
-    return value;
-  }
-  adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
-    const fieldType = typeof field === "string" ? field : field.fieldType;
-    if (value === null) {
-      return null;
-    }
-    switch (fieldType as EasyFieldType) {
-      case "BooleanField":
-        break;
-      case "DateField":
-        break;
+  // columns: AdapterColumn[];
+  // name: string;
+  // type: string;
+  // nullable: boolean;
+  // default: any;
+  // primaryKey: boolean;
+  // unique: boolean;
 
-      case "IntField":
-        break;
-      case "BigIntField":
-        break;
-      case "DecimalField":
-        break;
-      case "DataField":
-        break;
-      case "JSONField":
-        value = value ? JSON.stringify(value) : null;
-        break;
-      case "EmailField":
-        break;
-      case "ImageField":
-        break;
-      case "TextField":
-        break;
-      case "ChoicesField":
-        break;
-      case "MultiChoiceField":
-        break;
-      case "PasswordField":
-        break;
-      case "PhoneField":
-        break;
-      case "ConnectionField":
-        break;
-      case "TimeStampField":
-        value = new Date(value).toISOString();
-        break;
-      default:
-        break;
-    }
-    return value;
-  }
   private pool!: PostgresPool;
   camelCase: boolean = false;
+
+  schema: string = "public";
 
   async init(): Promise<void> {
     const config = this.config;
@@ -132,11 +65,45 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     };
   }
 
-  async createTable(tableName: string, fields: any): Promise<void> {
-    throw new Error("Method not implemented.");
+  async getTableColumns(tableName: string): Promise<AdapterColumn[]> {
+    const query =
+      `SELECT column_name, data_type, column_default, is_nullable, is_identity FROM information_schema.columns WHERE table_name = '${tableName}'`;
+    const result = await this.query<PostgresColumn>(query);
+    return result.data.map((column) => {
+      return {
+        name: toCamelCase(column.columnName),
+        type: column.dataType,
+        nullable: column.isNullable === "YES",
+        default: column.columnDefault,
+        primaryKey: column.isIdentity === "YES",
+        unique: false,
+      };
+    });
+  }
+  async addColumn(tableName: string, easyField: EasyField): Promise<void> {
+    const columnName = camelToSnakeCase(easyField.key as string);
+    const columnType = this.getColumnType(easyField);
+    const query =
+      `ALTER TABLE ${this.schema}.${tableName} ADD COLUMN ${columnName} ${columnType}`;
+    await this.query(query);
+  }
+  async tableExists(tableName: string): Promise<boolean> {
+    const query =
+      `SELECT table_name FROM information_schema.tables WHERE table_name = '${tableName}'`;
+    const result = await this.query<{ tableName: string }>(query);
+    return result.rowCount > 0;
+  }
+  async createTable(tableName: string, idField: EasyField): Promise<void> {
+    const columnName = camelToSnakeCase(idField.key as string);
+
+    const columnType = this.getColumnType(idField);
+
+    const query =
+      `CREATE TABLE ${this.schema}.${tableName} (${columnName} ${columnType} PRIMARY KEY)`;
+    await this.query<any>(query);
   }
   async dropTable(tableName: string): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error(`dropTable not implemented for postgres`);
   }
 
   async insert(
@@ -172,11 +139,12 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
   async update(
     tableName: string,
-    id: string,
+    id: string | number,
     data: Record<string, any>,
   ): Promise<any> {
     const columns = this.getColumns(data);
     const values = this.getValues(data);
+    const idValue = typeof id === "string" ? `'${id}'` : id;
     const valuesWithColumns = columns.map((column, index) => {
       return `${column} = ${values[index]}`;
     });
@@ -184,7 +152,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       valuesWithColumns.join(
         ", ",
       )
-    } WHERE id = ${id}`;
+    } WHERE id = ${idValue}`;
     const result = await this.query(query);
     return result;
   }
@@ -350,6 +318,93 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       default:
         return "TEXT";
     }
+  }
+  adaptLoadValue(field: EasyField, value: any): any {
+    switch (field.fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        value = JSON.parse(value);
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      case "TimeStampField":
+        value = new Date(value).getTime();
+        break;
+      default:
+        break;
+    }
+    return value;
+  }
+  adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
+    const fieldType = typeof field === "string" ? field : field.fieldType;
+    if (value === null) {
+      return null;
+    }
+    switch (fieldType as EasyFieldType) {
+      case "BooleanField":
+        break;
+      case "DateField":
+        break;
+
+      case "IntField":
+        break;
+      case "BigIntField":
+        break;
+      case "DecimalField":
+        break;
+      case "DataField":
+        break;
+      case "JSONField":
+        value = value ? JSON.stringify(value) : null;
+        break;
+      case "EmailField":
+        break;
+      case "ImageField":
+        break;
+      case "TextField":
+        break;
+      case "ChoicesField":
+        break;
+      case "MultiChoiceField":
+        break;
+      case "PasswordField":
+        break;
+      case "PhoneField":
+        break;
+      case "ConnectionField":
+        break;
+      case "TimeStampField":
+        value = new Date(value).toISOString();
+        break;
+      default:
+        break;
+    }
+    return value;
   }
 }
 

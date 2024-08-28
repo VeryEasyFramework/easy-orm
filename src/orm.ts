@@ -3,7 +3,7 @@ import {
   type DatabaseConfig,
   type ListOptions,
 } from "#/database/database.ts";
-
+import { type BasicFgColor, ColorMe } from "@vef/easy-cli";
 import type {
   CreateEntityFromDef,
   EntityClassConstructor,
@@ -14,12 +14,16 @@ import type {
 } from "#/entity/defineEntityTypes.ts";
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
 
-import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type {
+  EasyFieldType,
+  EasyFieldTypeMap,
+} from "#/entity/field/fieldTypes.ts";
 
 import { createEntityClass } from "#/entity/entityClass.ts";
 import { raiseOrmException } from "#/ormException.ts";
-import { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
 import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
+import { migrateEntity } from "#/database/migrate/migrateEntity.ts";
 interface Registry {
   [key: string]: {
     [key: PropertyKey]: {
@@ -49,15 +53,22 @@ export class EasyOrm<
 
   database: Database<D>;
   dbType: D;
+
+  idFieldType: EasyFieldType = "IDField";
   constructor(options: {
     entities: E;
     databaseType: D;
     databaseConfig: DatabaseConfig[D];
+    idFieldType?: EasyFieldType;
   }) {
     this.dbType = options.databaseType;
+    if (options.idFieldType) {
+      this.idFieldType = options.idFieldType;
+    }
     this.database = new Database({
       adapter: options.databaseType,
       config: options.databaseConfig,
+      idFieldType: this.idFieldType,
     });
 
     for (const entity of options.entities) {
@@ -250,20 +261,33 @@ export class EasyOrm<
   async migrate(options?: {
     onProgress?: (progress: number, total: number, message: string) => void;
   }): Promise<string[]> {
+    const message = (message: string, color?: BasicFgColor) => {
+      return ColorMe.fromOptions(message, { color });
+    };
     const results: string[] = [];
     const total = this.entityKeys.length;
     const progress = options?.onProgress || (() => {});
 
     let count = 0;
-    progress(count, total, "Starting migration");
     for (const entity of this.entityKeys) {
+      progress(
+        count,
+        total,
+        message(`Migrating ${entity as string}`, "brightBlue"),
+      );
       const entityDef = this.getEntityDef(entity as Ids);
-      const res = await this.database.migrateEntity(entityDef);
-      progress(++count, total, `Migrated ${entityDef.entityId}`);
-      if (!res) {
-        continue;
-      }
-      results.push(res);
+      const res = await migrateEntity({
+        database: this.database,
+        entity: entityDef,
+        onOutput: (message) => {
+          progress(count, total, message);
+        },
+      });
+      progress(
+        ++count,
+        total,
+        message(`Migrated ${entity as string}`, "brightGreen"),
+      );
     }
     return results;
   }

@@ -10,6 +10,15 @@ export interface RowsResult<T> {
   data: T[];
   columns: string[];
 }
+
+export interface AdapterColumn {
+  name: string;
+  type: string;
+  nullable: boolean;
+  default: any;
+  primaryKey: boolean;
+  unique: boolean;
+}
 export abstract class DatabaseAdapter<C> {
   // require constructor with a config object
   protected config: C;
@@ -29,7 +38,13 @@ export abstract class DatabaseAdapter<C> {
     tableName: string,
     entity: EntityDefinition,
   ): Promise<string>;
-  abstract createTable(tableName: string, fields: any): Promise<void>;
+  abstract createTable(tableName: string, idField: EasyField): Promise<void>;
+
+  abstract addColumn(tableName: string, easyField: EasyField): Promise<void>;
+
+  abstract getTableColumns(tableName: string): Promise<AdapterColumn[]>;
+
+  abstract tableExists(tableName: string): Promise<boolean>;
 
   abstract dropTable(tableName: string): Promise<void>;
 

@@ -1,4 +1,5 @@
 import {
+  AdapterColumn,
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
@@ -11,6 +12,15 @@ export interface DenoKvConfig {
   path?: string;
 }
 export class DenoKvAdapter extends DatabaseAdapter<DenoKvConfig> {
+  getTableColumns(tableName: string): Promise<AdapterColumn[]> {
+    throw new Error("Method not implemented.");
+  }
+  addColumn(tableName: string, easyField: EasyField): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  tableExists(tableName: string): Promise<boolean> {
+    throw new Error("Method not implemented.");
+  }
   kv!: Deno.Kv;
 
   async init(): Promise<void> {
@@ -26,7 +36,7 @@ export class DenoKvAdapter extends DatabaseAdapter<DenoKvConfig> {
   }
   async disconnect(): Promise<void> {
   }
-  async createTable(tableName: string, fields: any): Promise<void> {
+  async createTable(tableName: string): Promise<void> {
   }
   async dropTable(tableName: string): Promise<void> {
   }
