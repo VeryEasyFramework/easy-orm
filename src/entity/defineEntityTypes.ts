@@ -33,7 +33,7 @@ export type EntityDef<
   P extends PropertyKey,
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
-  AP extends PropertyKey,
+  AP extends PropertyKey | undefined,
   A extends ActionDef<AP>[],
 > = {
   entityId: Id;
@@ -47,13 +47,15 @@ export type EntityDef<
   actions: A;
 };
 
-export interface ActionDef<N extends PropertyKey = PropertyKey> {
-  key: N;
-  label?: string;
-  public?: boolean;
-  action(...args: any[]): Promise<any> | any;
-  description?: string;
-}
+export type ActionDef<N extends PropertyKey | undefined = PropertyKey> =
+  N extends PropertyKey ? {
+      key: N;
+      label?: string;
+      public?: boolean;
+      action(...args: any[]): Promise<any> | any;
+      description?: string;
+    }
+    : never;
 
 export type ExtractActions<A extends ActionDef[]> = {
   [K in A[number] as K["key"]]: K["action"];

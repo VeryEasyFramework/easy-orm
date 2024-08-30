@@ -1,6 +1,8 @@
 import type { Database, DatabaseConfig } from "#/database/database.ts";
 import type { EntityDefinition } from "#/entity/defineEntityTypes.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
+import { Orm } from "../../../mod.ts";
+import { raiseOrmException } from "#/ormException.ts";
 
 const idField: EasyField = {
   key: "id",
@@ -61,7 +63,11 @@ export async function migrateEntity(options: {
 
   // Create the missing columns
   for (const field of fieldsToCreate) {
-    await database.adapter.addColumn(tableName, field);
+    if (field.fieldType === "ConnectionField") {
+      field.fieldType = database.idFieldType;
+    }
+    const output = await database.adapter.addColumn(tableName, field);
+    onOutput(output);
   }
   if (fieldsToCreate.length > 0) {
     onOutput(`Created columns: ${fieldsToCreate.map((f) => f.key).join(", ")}`);

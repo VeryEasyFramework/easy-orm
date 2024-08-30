@@ -40,6 +40,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
   schema: string = "public";
 
+  toSnake(value: string): string {
+    return camelToSnakeCase(value);
+  }
   async init(): Promise<void> {
     const config = this.config;
     this.camelCase = config.camelCase || false;
@@ -66,8 +69,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
 
   async getTableColumns(tableName: string): Promise<AdapterColumn[]> {
+    tableName = this.toSnake(tableName);
     const query =
-      `SELECT column_name, data_type, column_default, is_nullable, is_identity FROM information_schema.columns WHERE table_name = '${tableName}'`;
+      `SELECT column_name, data_type, column_default, is_nullable, is_identity FROM information_schema.columns WHERE table_schema = '${this.schema}' AND table_name = '${tableName}'`;
     const result = await this.query<PostgresColumn>(query);
     return result.data.map((column) => {
       return {
@@ -81,19 +85,23 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     });
   }
   async addColumn(tableName: string, easyField: EasyField): Promise<void> {
+    tableName = this.toSnake(tableName);
     const columnName = camelToSnakeCase(easyField.key as string);
     const columnType = this.getColumnType(easyField);
     const query =
-      `ALTER TABLE ${this.schema}.${tableName} ADD COLUMN ${columnName} ${columnType}`;
+      `ALTER TABLE ${this.schema}.${tableName} ADD "${columnName}" ${columnType}`;
+    // return query;
     await this.query(query);
   }
   async tableExists(tableName: string): Promise<boolean> {
+    tableName = this.toSnake(tableName);
     const query =
-      `SELECT table_name FROM information_schema.tables WHERE table_name = '${tableName}'`;
+      `SELECT table_name FROM information_schema.tables WHERE table_schema = '${this.schema}' AND table_name = '${tableName}'`;
     const result = await this.query<{ tableName: string }>(query);
     return result.rowCount > 0;
   }
   async createTable(tableName: string, idField: EasyField): Promise<void> {
+    tableName = this.toSnake(tableName);
     const columnName = camelToSnakeCase(idField.key as string);
 
     const columnType = this.getColumnType(idField);
@@ -103,6 +111,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     await this.query<any>(query);
   }
   async dropTable(tableName: string): Promise<void> {
+    tableName = this.toSnake(tableName);
     throw new Error(`dropTable not implemented for postgres`);
   }
 
@@ -111,6 +120,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     id: string,
     data: Record<string, any>,
   ): Promise<any> {
+    tableName = this.toSnake(tableName);
     const columns = this.getColumns(data);
     const values = this.getValues(data);
     const valuesWithColumns = columns.join(", ");
@@ -122,7 +132,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
 
   async delete(tableName: string, field: string, value: any): Promise<void> {
-    const query = `DELETE FROM ${tableName} WHERE ${field} = ${value}`;
+    tableName = this.toSnake(tableName);
+    const query =
+      `DELETE FROM ${this.schema}.${tableName} WHERE ${field} = ${value}`;
     await this.query(query);
   }
   private getColumns(data: Record<string, any>): string[] {
@@ -142,13 +154,14 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     id: string | number,
     data: Record<string, any>,
   ): Promise<any> {
+    tableName = this.toSnake(tableName);
     const columns = this.getColumns(data);
     const values = this.getValues(data);
     const idValue = typeof id === "string" ? `'${id}'` : id;
     const valuesWithColumns = columns.map((column, index) => {
       return `${column} = ${values[index]}`;
     });
-    const query = `UPDATE ${tableName} SET ${
+    const query = `UPDATE ${this.schema}.${tableName} SET ${
       valuesWithColumns.join(
         ", ",
       )
@@ -161,6 +174,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
+    tableName = this.toSnake(tableName);
     if (!options) {
       options = {} as ListOptions;
     }
@@ -209,6 +223,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     return result;
   }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
+    tableName = this.toSnake(tableName);
     if (this.camelCase) {
       field = camelToSnakeCase(field);
     }
@@ -238,6 +253,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     value: any,
     filters: Record<string, any>,
   ): Promise<void> {
+    tableName = this.toSnake(tableName);
     let query = `UPDATE ${this.schema}.${tableName} SET ${
       camelToSnakeCase(field)
     } = ${formatValue(value)}`;
@@ -282,6 +298,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         return "TEXT";
       case "TimeStampField":
         return "TIMESTAMP";
+      case "IDField":
+        return "VARCHAR(255)";
       default:
         return "TEXT";
     }

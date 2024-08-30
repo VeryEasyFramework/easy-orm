@@ -34,10 +34,6 @@ export abstract class DatabaseAdapter<C> {
 
   abstract disconnect(): Promise<void>;
 
-  abstract syncTable(
-    tableName: string,
-    entity: EntityDefinition,
-  ): Promise<string>;
   abstract createTable(tableName: string, idField: EasyField): Promise<void>;
 
   abstract addColumn(tableName: string, easyField: EasyField): Promise<void>;

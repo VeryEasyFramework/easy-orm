@@ -500,17 +500,20 @@ export function createEntityClass<
     const privName = `_${hook}`;
     entityClass.prototype[privName] = entityDef.hooks[hookKey];
   }
-
-  for (const action of entityDef.actions) {
-    entityClass.prototype[action.key] = action.action;
+  if (entityDef.actions) {
+    for (const action of entityDef.actions) {
+      entityClass.prototype[action.key] = action.action;
+    }
   }
 
   for (const hook in entityDef.hooks) {
     const privName = `_${hook}`;
     entityClass.prototype[privName].bind(entityClass);
   }
-  for (const action of entityDef.actions) {
-    entityClass.prototype[action.key].bind(entityClass);
+  if (entityDef.actions) {
+    for (const action of entityDef.actions) {
+      entityClass.prototype[action.key].bind(entityClass);
+    }
   }
   return entityClass;
 }

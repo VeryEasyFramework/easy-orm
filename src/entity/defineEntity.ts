@@ -20,7 +20,7 @@ export function defineEntity<
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
   H extends Partial<EntityHooks>,
-  AP extends PropertyKey,
+  AP extends PropertyKey | undefined,
   A extends ActionDef<AP>[],
 >(entityId: Id, options: {
   label: string;
@@ -51,7 +51,7 @@ export function defineEntity<
       beforeInsert: options.hooks?.beforeInsert || (() => {}),
       afterInsert: options.hooks?.afterInsert || (() => {}),
     } as EntityHooks,
-    actions: options.actions || {} as A,
+    actions: options.actions as A,
     tableName: options.tableName || entityId,
     config: {
       ...options.config,
