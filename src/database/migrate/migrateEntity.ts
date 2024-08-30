@@ -44,7 +44,7 @@ export async function migrateEntity(options: {
   const fieldsToCreate: EasyField[] = [];
 
   // Check if the base fields exist
-  for (const field of baseFields) {
+  for (const field of [...baseFields, primaryField]) {
     const columnExists = existingColumns.find((c) => c.name === field.key);
     if (!columnExists) {
       fieldsToCreate.push(field);

@@ -116,7 +116,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const valuesWithColumns = columns.join(", ");
     const valuesString = values.join(", ");
     const query =
-      `INSERT INTO ${tableName} (${valuesWithColumns}) VALUES (${valuesString}) RETURNING *`;
+      `INSERT INTO ${this.schema}.${tableName} (${valuesWithColumns}) VALUES (${valuesString}) RETURNING *`;
     const result = await this.query(query);
     return result;
   }
@@ -170,8 +170,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         return camelToSnakeCase(column);
       }).join(", ");
     }
-    let query = `SELECT ${columns} FROM ${tableName}`;
-    let countQuery = `SELECT COUNT(*) FROM ${tableName}`;
+    let query = `SELECT ${columns} FROM ${this.schema}.${tableName}`;
+    let countQuery = `SELECT COUNT(*) FROM ${this.schema}.${tableName}`;
 
     if (options.filter) {
       const keys = Object.keys(options.filter);
@@ -213,7 +213,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       field = camelToSnakeCase(field);
     }
     value = formatValue(value);
-    const query = `SELECT * FROM ${tableName} WHERE ${field} = ${value}`;
+    const query =
+      `SELECT * FROM ${this.schema}.${tableName} WHERE ${field} = ${value}`;
     const result = await this.query<T>(query);
     if (result.rowCount === 0) {
       throw new PgError({
@@ -237,50 +238,16 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     value: any,
     filters: Record<string, any>,
   ): Promise<void> {
-    let query = `UPDATE ${tableName} SET ${camelToSnakeCase(field)} = ${
-      formatValue(value)
-    }`;
+    let query = `UPDATE ${this.schema}.${tableName} SET ${
+      camelToSnakeCase(field)
+    } = ${formatValue(value)}`;
     if (filters) {
       query += " WHERE ";
       query += this.makeFilter(filters);
     }
     await this.query(query);
   }
-  async syncTable(tableName: string, entity: any): Promise<string> {
-    // get the current columns in the table
-    const query =
-      `SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}'`;
-    // return query;
-    const result = await this.query<{ columnName: string }>(query);
-    const columns = result.data.map((column) => column.columnName);
-    const fields = entity.fields;
-    fields.push({
-      key: "updatedAt",
-      fieldType: "TimeStampField",
-    } as EasyField);
-    fields.push({
-      key: "createdAt",
-      fieldType: "TimeStampField",
-    } as EasyField);
-    const addedColumns: string[] = [];
-    for (const field of fields) {
-      const columnName = camelToSnakeCase(field.key);
-      if (!columns.includes(columnName)) {
-        // create the column
-        const query = `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${
-          this.getColumnType(
-            field,
-          )
-        }`;
-        await this.query(query);
-        addedColumns.push(columnName);
-      }
-    }
-    if (addedColumns.length === 0) {
-      return "";
-    }
-    return tableName + ":" + addedColumns.join(", ");
-  }
+
   getColumnType(field: EasyField): string {
     switch (field.fieldType as EasyFieldType) {
       case "BooleanField":

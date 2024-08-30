@@ -1,14 +1,18 @@
 import type { EasyField } from "#/entity/field/ormField.ts";
 import type {
-  EntityActionRecord,
+  ActionDef,
   EntityConfig,
   EntityDef,
   EntityHooks,
+  ExtractActions,
   ExtractEntityFields,
   FieldKey,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+
+// remap the action object to a named function
+// for example, { action: async () => {} } becomes { action(): Promise<void> }
 
 export function defineEntity<
   Id extends string,
@@ -16,8 +20,8 @@ export function defineEntity<
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
   H extends Partial<EntityHooks>,
-  AP extends PropertyKey | undefined,
-  A extends EntityActionRecord<AP>,
+  AP extends PropertyKey,
+  A extends ActionDef<AP>[],
 >(entityId: Id, options: {
   label: string;
   titleField?: FieldKey<F>;
@@ -27,10 +31,16 @@ export function defineEntity<
   fields: F;
   tableName?: string;
   config?: EntityConfig;
-  hooks?: H & ThisType<EntityHooks & ExtractEntityFields<F> & A & { orm: Orm }>;
+  hooks?:
+    & H
+    & ThisType<
+      EntityHooks & ExtractEntityFields<F> & ExtractActions<A> & { orm: Orm }
+    >;
   actions?:
     & A
-    & ThisType<A & EntityHooks & ExtractEntityFields<F> & { orm: Orm }>;
+    & ThisType<
+      ExtractActions<A> & EntityHooks & ExtractEntityFields<F> & { orm: Orm }
+    >;
 }): EntityDef<Id, P, T, F, AP, A> {
   const output = {
     entityId,

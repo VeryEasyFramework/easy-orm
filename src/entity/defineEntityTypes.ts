@@ -6,14 +6,6 @@ import type {
 import type { EasyField } from "./field/ormField.ts";
 import type { EasyOrm } from "../orm.ts";
 
-export type EntityActionDef<
-  P extends PropertyKey,
-> = {
-  [K in P]: (
-    ...args: any[]
-  ) => Promise<void>;
-};
-
 export interface EntityHooks {
   beforeSave(): Promise<void>;
   afterSave(): Promise<void>;
@@ -41,8 +33,8 @@ export type EntityDef<
   P extends PropertyKey,
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
-  AP extends PropertyKey | undefined,
-  A extends EntityActionRecord<AP>,
+  AP extends PropertyKey,
+  A extends ActionDef<AP>[],
 > = {
   entityId: Id;
   titleField?: FieldKey<F>;
@@ -54,21 +46,32 @@ export type EntityDef<
   tableName: string;
   actions: A;
 };
-export type EntityActionRecord<AP extends PropertyKey | undefined> = AP extends
-  PropertyKey ? Record<
-    AP,
-    (
-      ...args: any[]
-    ) => Promise<void>
-  >
-  : {};
+
+export interface ActionDef<N extends PropertyKey = PropertyKey> {
+  key: N;
+  label?: string;
+  public?: boolean;
+  action(...args: any[]): Promise<any> | any;
+  description?: string;
+}
+
+export type ExtractActions<A extends ActionDef[]> = {
+  [K in A[number] as K["key"]]: K["action"];
+};
+// export type EntityActionRecord<AP extends PropertyKey | undefined> = AP extends
+//   PropertyKey ? Record<
+//     AP,
+//     ActionDef
+//   >
+//   : {};
+
 export type EntityDefinition<Id extends string = string> = EntityDef<
   Id,
   PropertyKey,
   EasyFieldType,
   EasyField[],
   PropertyKey,
-  Record<PropertyKey, (...args: any[]) => Promise<void>>
+  ActionDef[]
 >;
 
 export type EntityIds<E extends EntityDefinition[]> = E[number]["entityId"];
@@ -90,7 +93,7 @@ export type EntityFromDef<E> = E extends
     }
     & BaseFields
     & EntityHooks
-    & E["actions"]
+    & ExtractActions<E["actions"]>
     & {
       update(data: Record<string, any>): Promise<void>;
       save(): Promise<void>;
@@ -121,7 +124,7 @@ export interface EntityClassConstructor<E extends EntityDefinition> {
   fields: E["fields"];
   new ():
     & EntityFromDef<any>
-    & E["actions"]
+    & ExtractActions<E["actions"]>
     & E["hooks"]
     & ExtractEntityFields<E["fields"]>
     & { data: ExtractEntityFields<E["fields"]> }
