@@ -45,6 +45,7 @@ export function defineEntity<
   const output = {
     entityId,
     ...options,
+    listFields: [],
     hooks: {
       beforeSave: options.hooks?.beforeSave || (() => {}),
       afterSave: options.hooks?.afterSave || (() => {}),

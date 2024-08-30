@@ -41,6 +41,7 @@ export type EntityDef<
   primaryKey?: string;
   label: string;
   fields: F;
+  listFields: FieldKey<F>[];
   hooks: EntityHooks;
   config: EntityConfig;
   tableName: string;

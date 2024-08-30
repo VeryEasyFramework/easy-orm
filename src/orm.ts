@@ -24,6 +24,7 @@ import { raiseOrmException } from "#/ormException.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
 import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
 import { migrateEntity } from "#/database/migrate/migrateEntity.ts";
+import { FieldKey } from "#/entity/defineEntityTypes.ts";
 interface Registry {
   [key: string]: {
     [key: PropertyKey]: {
@@ -106,6 +107,7 @@ export class EasyOrm<
     for (const entity of this.entityKeys) {
       const entityDef = this.getEntityDef(entity as Ids);
       this.buildConnectionTitleFields(entityDef);
+      this.buildListFields(entityDef);
     }
   }
   private validateEntities() {
@@ -199,6 +201,39 @@ export class EasyOrm<
     }
     // this.entities[entity.entityId as keyof R] = entity as R[keyof R];
   }
+
+  private buildListFields(entity: EntityDefinition) {
+    const listFields: FieldKey<typeof entity.fields>[] = [];
+    if (entity.titleField) {
+      const titleField = entity.fields.find((field) =>
+        field.key === entity.titleField
+      );
+      if (titleField) {
+        titleField.inList = true;
+        listFields.push(titleField.key);
+      }
+    }
+    for (const field of entity.fields) {
+      if (field.inList) {
+        listFields.push(field.key);
+      }
+      if (field.fieldType === "ConnectionField") {
+        if (field.connectionTitleField) {
+          const connectionTitleField = entity.fields.find((f) =>
+            f.key === field.connectionTitleField
+          );
+          if (connectionTitleField) {
+            connectionTitleField.inList = true;
+            listFields.push(connectionTitleField.key);
+          }
+        }
+      }
+    }
+    listFields.push("createdAt");
+    listFields.push("updatedAt");
+    listFields.push("id");
+    entity.listFields = listFields;
+  }
   private buildConnectionTitleField(
     field: EasyField,
   ) {
@@ -222,7 +257,6 @@ export class EasyOrm<
 
     const titleField = { ...entityTitleField };
     titleField.readOnly = true;
-    titleField.inList = true;
     titleField.fetchOptions = {
       fetchEntity: field.connectionEntity,
       thisIdKey: field.key as string,
@@ -366,13 +400,8 @@ export class EasyOrm<
     }
     options = options || {};
     if (!options.columns) {
-      options.columns = ["id"];
+      options.columns = entityDef.listFields as string[];
     }
-
-    const listColumns = entityDef.fields.filter((field) => field.inList);
-
-    const columns = listColumns.map((column) => column.key) as string[];
-    options.columns = options.columns.concat(columns);
     if (!options.limit) {
       options.limit = 100;
     }
