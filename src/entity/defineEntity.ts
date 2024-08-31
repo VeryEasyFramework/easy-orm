@@ -24,6 +24,7 @@ export function defineEntity<
   A extends ActionDef<AP>[],
 >(entityId: Id, options: {
   label: string;
+  description?: string;
   titleField?: FieldKey<F>;
   /**
    * @description The fields of the entity.

@@ -395,6 +395,7 @@ export class EntityClass {
       if (field.key in data && !isEmpty(data[field.key])) {
         continue;
       }
+
       if (field.defaultValue) {
         data[field.key] = typeof field.defaultValue === "function"
           ? field.defaultValue()
@@ -412,7 +413,9 @@ export class EntityClass {
           data[field.key] = 0;
           break;
         default:
-          data[field.key] = null;
+          if (Object.keys(data).includes(field.key as string)) {
+            data[field.key] = null;
+          }
           break;
       }
     }

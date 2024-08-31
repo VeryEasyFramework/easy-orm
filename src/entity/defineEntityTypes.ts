@@ -38,6 +38,7 @@ export type EntityDef<
 > = {
   entityId: Id;
   titleField?: FieldKey<F>;
+  description?: string;
   primaryKey?: string;
   label: string;
   fields: F;
