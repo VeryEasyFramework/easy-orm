@@ -14,6 +14,7 @@ import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 // remap the action object to a named function
 // for example, { action: async () => {} } becomes { action(): Promise<void> }
 
+type EntityType = "entity" | "settings";
 export function defineEntity<
   Id extends string,
   P extends PropertyKey,
@@ -25,6 +26,7 @@ export function defineEntity<
 >(entityId: Id, options: {
   label: string;
   description?: string;
+  entityType?: EntityType;
   titleField?: FieldKey<F>;
   /**
    * @description The fields of the entity.
@@ -46,6 +48,7 @@ export function defineEntity<
   const output = {
     entityId,
     ...options,
+    entityType: options.entityType || "entity",
     listFields: [],
     hooks: {
       beforeSave: options.hooks?.beforeSave || (() => {}),

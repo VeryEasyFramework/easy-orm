@@ -107,7 +107,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const columnType = this.getColumnType(idField);
 
     const query =
-      `CREATE TABLE ${this.schema}.${tableName} (${columnName} ${columnType} PRIMARY KEY)`;
+      `CREATE TABLE IF NOT EXISTS ${this.schema}.${tableName} (${columnName} ${columnType} PRIMARY KEY)`;
     await this.query<any>(query);
   }
   async dropTable(tableName: string): Promise<void> {

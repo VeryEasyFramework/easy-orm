@@ -9,7 +9,6 @@ import type {
   EntityClassConstructor,
   EntityDefFromModel,
   EntityDefinition,
-  EntityFromDef,
   ListEntityFromDef,
 } from "#/entity/defineEntityTypes.ts";
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
@@ -24,7 +23,8 @@ import { raiseOrmException } from "#/ormException.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
 import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
 import { migrateEntity } from "#/database/migrate/migrateEntity.ts";
-import { FieldKey } from "#/entity/defineEntityTypes.ts";
+import type { FieldKey } from "#/entity/defineEntityTypes.ts";
+import { installDatabase } from "#/database/install/installDatabase.ts";
 interface Registry {
   [key: string]: {
     [key: PropertyKey]: {
@@ -292,15 +292,24 @@ export class EasyOrm<
       field: config.source.field,
     });
   }
+  async install() {
+    await installDatabase({
+      database: this.database,
+    });
+  }
   async migrate(options?: {
     onProgress?: (progress: number, total: number, message: string) => void;
   }): Promise<string[]> {
     const message = (message: string, color?: BasicFgColor) => {
       return ColorMe.fromOptions(message, { color });
     };
+
     const results: string[] = [];
     const total = this.entityKeys.length;
     const progress = options?.onProgress || (() => {});
+    progress(0, total, message("Validating installation", "brightYellow"));
+    await this.install();
+    progress(0, total, message("Installation validated", "brightGreen"));
 
     let count = 0;
     for (const entity of this.entityKeys) {
