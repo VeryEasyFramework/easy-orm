@@ -8,7 +8,6 @@ import type {
   ExtractEntityFields,
   FieldGroupDef,
   FieldKey,
-  GroupKey,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";

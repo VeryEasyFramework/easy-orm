@@ -206,29 +206,29 @@ export class EasyOrm<
   private buildFieldGroups(entity: EntityDefinition) {
     const groups: Record<string, FieldGroup> = {};
     // Add default group if no group is specified for a field
-    const defaultGroup = entity.fields.filter((field) => !field.group);
-    if (defaultGroup.length) {
-      groups["default"] = {
-        title: "Default",
-        key: "default",
-        fields: defaultGroup,
-      };
-    }
+    // const defaultGroup = entity.fields.filter((field) => !field.group);
+    // if (defaultGroup.length) {
+    //   groups["default"] = {
+    //     title: "Default",
+    //     key: "default",
+    //     fields: defaultGroup,
+    //   };
+    // }
 
-    for (const field of entity.fields) {
-      if (field.group) {
-        if (!groups[field.group]) {
-          groups[field.group] = {
-            title: field.group,
-            key: field.group,
-            fields: [],
-          };
-        }
-        groups[field.group].fields.push(field);
-      }
-    }
+    // for (const field of entity.fields) {
+    //   if (field.group) {
+    //     if (!groups[field.group]) {
+    //       groups[field.group] = {
+    //         title: field.group,
+    //         key: field.group,
+    //         fields: [],
+    //       };
+    //     }
+    //     groups[field.group].fields.push(field);
+    //   }
+    // }
 
-    entity.groups = Object.values(groups);
+    // entity.groups = Object.values(groups);
     return entity;
   }
   private buildListFields(entity: EntityDefinition) {

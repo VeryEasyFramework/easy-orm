@@ -2,7 +2,6 @@ import type {
   EasyFieldType,
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
-import { FieldGroupDef, GroupKey } from "#/entity/defineEntityTypes.ts";
 
 export type ExtractFieldKey<T> = T extends EasyField<infer K, infer T> ? K
   : never;
