@@ -6,7 +6,9 @@ import type {
   EntityHooks,
   ExtractActions,
   ExtractEntityFields,
+  FieldGroupDef,
   FieldKey,
+  GroupKey,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
@@ -15,6 +17,7 @@ import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 // for example, { action: async () => {} } becomes { action(): Promise<void> }
 
 type EntityType = "entity" | "settings";
+
 export function defineEntity<
   Id extends string,
   P extends PropertyKey,
@@ -23,6 +26,7 @@ export function defineEntity<
   H extends Partial<EntityHooks>,
   AP extends PropertyKey | undefined,
   A extends ActionDef<AP>[],
+  FG extends FieldGroupDef<F>,
 >(entityId: Id, options: {
   label: string;
   description?: string;
@@ -32,6 +36,7 @@ export function defineEntity<
    * @description The fields of the entity.
    */
   fields: F;
+  fieldGroups: FG;
   tableName?: string;
   config?: EntityConfig;
   hooks?:
@@ -50,6 +55,8 @@ export function defineEntity<
     ...options,
     entityType: options.entityType || "entity",
     listFields: [],
+    fieldGroups: options.fieldGroups || [],
+    groups: [],
     hooks: {
       beforeSave: options.hooks?.beforeSave || (() => {}),
       afterSave: options.hooks?.afterSave || (() => {}),

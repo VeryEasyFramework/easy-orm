@@ -3,7 +3,7 @@ import type {
   EasyFieldType,
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
-import type { EasyField } from "./field/ormField.ts";
+import type { EasyField, ExtractFieldKey } from "./field/ormField.ts";
 import type { EasyOrm } from "../orm.ts";
 
 export interface EntityHooks {
@@ -21,13 +21,22 @@ export type Orm = EasyOrm<
   any,
   any
 >;
-
+export type FieldGroupDef<F extends EasyField[]> = Record<string, {
+  title: string;
+  description?: string;
+  fields: F[number]["key"][];
+}>;
 export type ExtractEntityFields<F extends EasyField[]> = {
   [K in F[number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
 };
 
 export type FieldKey<F extends EasyField[]> = F[number]["key"];
 
+export interface FieldGroup {
+  title: string;
+  key: string;
+  fields: EasyField[];
+}
 export type EntityDef<
   Id extends string,
   P extends PropertyKey,
@@ -44,6 +53,7 @@ export type EntityDef<
   label: string;
   fields: F;
   listFields: FieldKey<F>[];
+  groups: FieldGroup[];
   hooks: EntityHooks;
   config: EntityConfig;
   tableName: string;

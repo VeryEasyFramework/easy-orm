@@ -2,6 +2,7 @@ import type {
   EasyFieldType,
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
+import { FieldGroupDef, GroupKey } from "#/entity/defineEntityTypes.ts";
 
 export type ExtractFieldKey<T> = T extends EasyField<infer K, infer T> ? K
   : never;
@@ -127,4 +128,9 @@ export interface EasyField<
    * Set to true if the field should be unique.
    */
   unique?: boolean;
+
+  /**
+   * Set to true if the field should be hidden in the UI.
+   */
+  hidden?: boolean;
 }
