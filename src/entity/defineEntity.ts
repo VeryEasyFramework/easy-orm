@@ -35,7 +35,7 @@ export function defineEntity<
    * @description The fields of the entity.
    */
   fields: F;
-  fieldGroups: FG;
+  fieldGroups?: FG;
   tableName?: string;
   config?: EntityConfig;
   hooks?:

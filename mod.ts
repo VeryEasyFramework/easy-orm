@@ -6,7 +6,6 @@ export { EasyOrm } from "#/orm.ts";
 export { defineEntity } from "#/entity/defineEntity.ts";
 export type {
   CreateEntityFromDef,
-  EntityActionRecord,
   EntityClassConstructor,
   EntityConfig,
   EntityDefFromModel,
