@@ -1,10 +1,8 @@
 import type { EasyField } from "#/entity/field/ormField.ts";
 import type {
-  ActionDef,
   EntityConfig,
   EntityDef,
   EntityHooks,
-  ExtractActions,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
 import type {
@@ -16,22 +14,53 @@ import type { EasyFieldDef, FieldGroupDef } from "#/entity/field/easyField.ts";
 type FieldKey<F> = F extends Record<string, EasyFieldDef> ? keyof F : never;
 
 type EntityType = "entity" | "settings";
-type ExtractEntityFields<F> = F extends Record<string, EasyFieldDef> ? {
-    [K in keyof F]: EasyFieldTypeMap[F[K]["fieldType"]];
-  }
+type ExtractEntityFields<F> = F extends
+  Record<PropertyKey, EasyFieldDef<infer T, infer G>>
+  ? { [K in keyof F]: EasyFieldTypeMap[F[K]["fieldType"]] }
+  : never;
+
+type ExtractActions<
+  A extends {
+    [K in keyof A]: InferredAction<Action<any, any>>;
+  },
+> = { [K in keyof A]: A[K]["action"] };
+type Action<
+  P extends {
+    [K in keyof P]: {
+      required: boolean;
+      type: keyof EasyFieldTypeMap;
+    };
+  },
+  D extends {
+    [E in keyof P]: EasyFieldTypeMap[P[E]["type"]];
+  },
+> = {
+  description?: string;
+  action: (
+    data: D,
+  ) => Promise<any> | any;
+  params?: P;
+  public?: boolean;
+};
+
+export type InferredAction<A> = A extends Action<infer P, infer D>
+  ? Action<P, D>
   : never;
 export function defineEntityNew<
   Id extends string,
-  G extends Record<string, FieldGroupDef>,
+  GP extends PropertyKey,
+  G extends Record<GP, FieldGroupDef>,
+  FP extends PropertyKey,
   T extends EasyFieldType,
-  TT extends
-    & ExtractEntityFields<F>
-    & { orm: Orm }
-    & EntityHooks,
-  F extends Record<string, EasyFieldDef<T, keyof G>>,
+  F extends {
+    [K in FP]: EasyFieldDef<T, keyof G>;
+  },
   H extends Partial<EntityHooks>,
   AP extends PropertyKey,
-  A extends ActionDef<TT, AP>[],
+  AC extends Action<any, any>,
+  A extends {
+    [K in AP]: InferredAction<AC>;
+  },
 >(entityId: Id, options: {
   label: string;
   description?: string;
@@ -40,14 +69,20 @@ export function defineEntityNew<
    * @description The fields of the entity.
    */
   fields: F;
-  titleField?: keyof F;
-  fieldGroups?: G;
+  titleField?: FieldKey<F>;
+  fieldGroups?: Record<GP, FieldGroupDef>;
   tableName?: string;
   config?: EntityConfig;
   hooks?:
     & H
-    & ThisType<TT>;
-  actions?: A;
+    & ThisType<
+      EntityHooks & ExtractEntityFields<F> & {
+        orm: Orm;
+      }
+    >;
+  actions?:
+    & A
+    & ThisType<ExtractEntityFields<F> & ExtractActions<A>>;
 }) {
   const output = {
     entityId,

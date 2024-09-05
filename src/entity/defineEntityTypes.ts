@@ -43,7 +43,7 @@ export type EntityDef<
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
   AP extends PropertyKey,
-  A extends ActionDef<any, AP>[],
+  A extends ActionDef<any>,
 > = {
   entityId: Id;
   titleField?: FieldKey<F>;
@@ -60,23 +60,20 @@ export type EntityDef<
   actions: A;
 };
 
-export type ActionDef<T, N extends PropertyKey> = {
-  key: N;
+export interface ActionDef<T> {
   label?: string;
   public?: boolean;
   action(this: T, ...args: any[]): Promise<any> | any;
   description?: string;
+}
+
+export type ActionsDef<A extends ActionsDef<A, T>, T> = {
+  [K in keyof A]: ActionDef<T>;
 };
-export type ExtractActions<A> = A extends ActionDef<infer T, infer N>[] ? {
-    [K in A[number] as K["key"]]: K["action"];
+export type ExtractActions<A> = A extends ActionDef<infer T> ? {
+    [K in keyof A]: ActionDef<T>;
   }
   : never;
-// export type EntityActionRecord<AP extends PropertyKey | undefined> = AP extends
-//   PropertyKey ? Record<
-//     AP,
-//     ActionDef
-//   >
-//   : {};
 
 export type EntityDefinition<Id extends string = string> = EntityDef<
   Id,
@@ -84,7 +81,7 @@ export type EntityDefinition<Id extends string = string> = EntityDef<
   EasyFieldType,
   EasyField[],
   PropertyKey,
-  ActionDef<any, any>[]
+  ActionDef<any>
 >;
 
 export type EntityIds<E extends EntityDefinition[]> = E[number]["entityId"];

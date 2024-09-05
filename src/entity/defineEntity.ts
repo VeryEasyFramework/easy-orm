@@ -23,7 +23,7 @@ export function defineEntity<
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
   H extends Partial<EntityHooks>,
-  AP extends PropertyKey | undefined,
+  AP extends PropertyKey,
   A extends ActionDef<AP>[],
   FG extends FieldGroupDef<F>,
 >(entityId: Id, options: {
@@ -48,7 +48,7 @@ export function defineEntity<
     & ThisType<
       ExtractActions<A> & EntityHooks & ExtractEntityFields<F> & { orm: Orm }
     >;
-}): EntityDef<Id, P, T, F, AP, A> {
+}) {
   const output = {
     entityId,
     ...options,
