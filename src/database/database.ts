@@ -68,12 +68,16 @@ export class Database<
   adapter: DatabaseAdapter<DatabaseConfig[keyof DatabaseConfig]>;
 
   private config: DatabaseConfig[A];
-
+  idFieldType: EasyFieldType = "IDField";
   constructor(options: {
     adapter: A;
     config: DatabaseConfig[A];
+    idFieldType?: EasyFieldType;
   }) {
     this.config = options.config;
+    if (options.idFieldType) {
+      this.idFieldType = options.idFieldType;
+    }
     switch (options.adapter) {
       case "postgres":
         this.adapter = new PostgresAdapter(options.config as PostgresConfig);
@@ -103,9 +107,6 @@ export class Database<
     await this.adapter.disconnect();
   }
 
-  async migrateEntity(entity: EntityDefinition): Promise<string> {
-    return await this.adapter.syncTable(entity.tableName, entity);
-  }
   stop() {
     this.adapter.disconnect();
   }
@@ -114,13 +115,6 @@ export class Database<
   }
   adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
     return this.adapter.adaptSaveValue(field, value);
-  }
-
-  async createTable(tableName: string, fields: any): Promise<void> {
-    await this.adapter.createTable(tableName, fields);
-  }
-  async dropTable(tableName: string): Promise<void> {
-    await this.adapter.dropTable(tableName);
   }
   async insertRow<T>(
     tableName: string,

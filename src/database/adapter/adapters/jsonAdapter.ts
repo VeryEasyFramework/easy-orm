@@ -1,4 +1,5 @@
 import {
+  AdapterColumn,
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
@@ -11,6 +12,15 @@ export interface JSONConfig {
   dataPath: string;
 }
 export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
+  getTableColumns(tableName: string): Promise<AdapterColumn[]> {
+    throw new Error("Method not implemented.");
+  }
+  addColumn(tableName: string, easyField: EasyField): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  tableExists(tableName: string): Promise<boolean> {
+    throw new Error("Method not implemented.");
+  }
   syncTable(tableName: string, entity: EntityDefinition): Promise<string> {
     throw new Error("Method not implemented.");
   }
@@ -103,7 +113,7 @@ export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
   }
   async disconnect(): Promise<void> {
   }
-  createTable(tableName: string, fields: any): Promise<void> {
+  createTable(tableName: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
   dropTable(tableName: string): Promise<void> {

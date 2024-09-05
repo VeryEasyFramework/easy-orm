@@ -3,16 +3,8 @@ import type {
   EasyFieldType,
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
-import type { EasyField } from "./field/ormField.ts";
+import type { EasyField, ExtractFieldKey } from "./field/ormField.ts";
 import type { EasyOrm } from "../orm.ts";
-
-export type EntityActionDef<
-  P extends PropertyKey,
-> = {
-  [K in P]: (
-    ...args: any[]
-  ) => Promise<void>;
-};
 
 export interface EntityHooks {
   beforeSave(): Promise<void>;
@@ -29,46 +21,72 @@ export type Orm = EasyOrm<
   any,
   any
 >;
-
+export type FieldGroupDef<F extends EasyField[]> = Record<string, {
+  title: string;
+  description?: string;
+  fields: F[number]["key"][];
+}>;
 export type ExtractEntityFields<F extends EasyField[]> = {
   [K in F[number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
 };
 
 export type FieldKey<F extends EasyField[]> = F[number]["key"];
 
+export interface FieldGroup {
+  title: string;
+  key: string;
+  fields: EasyField[];
+}
 export type EntityDef<
   Id extends string,
   P extends PropertyKey,
   T extends EasyFieldType,
   F extends EasyField<P, T>[],
   AP extends PropertyKey | undefined,
-  A extends EntityActionRecord<AP>,
+  A extends ActionDef<AP>[],
 > = {
   entityId: Id;
   titleField?: FieldKey<F>;
+  entityType: "entity" | "settings";
+  description?: string;
   primaryKey?: string;
   label: string;
   fields: F;
+  listFields: FieldKey<F>[];
+  groups: FieldGroup[];
   hooks: EntityHooks;
   config: EntityConfig;
   tableName: string;
   actions: A;
 };
-export type EntityActionRecord<AP extends PropertyKey | undefined> = AP extends
-  PropertyKey ? Record<
-    AP,
-    (
-      ...args: any[]
-    ) => Promise<void>
-  >
-  : {};
+
+export type ActionDef<N extends PropertyKey | undefined = PropertyKey> =
+  N extends PropertyKey ? {
+      key: N;
+      label?: string;
+      public?: boolean;
+      action(...args: any[]): Promise<any> | any;
+      description?: string;
+    }
+    : never;
+
+export type ExtractActions<A extends ActionDef[]> = {
+  [K in A[number] as K["key"]]: K["action"];
+};
+// export type EntityActionRecord<AP extends PropertyKey | undefined> = AP extends
+//   PropertyKey ? Record<
+//     AP,
+//     ActionDef
+//   >
+//   : {};
+
 export type EntityDefinition<Id extends string = string> = EntityDef<
   Id,
   PropertyKey,
   EasyFieldType,
   EasyField[],
   PropertyKey,
-  Record<PropertyKey, (...args: any[]) => Promise<void>>
+  ActionDef[]
 >;
 
 export type EntityIds<E extends EntityDefinition[]> = E[number]["entityId"];
@@ -90,7 +108,7 @@ export type EntityFromDef<E> = E extends
     }
     & BaseFields
     & EntityHooks
-    & E["actions"]
+    & ExtractActions<E["actions"]>
     & {
       update(data: Record<string, any>): Promise<void>;
       save(): Promise<void>;
@@ -121,7 +139,7 @@ export interface EntityClassConstructor<E extends EntityDefinition> {
   fields: E["fields"];
   new ():
     & EntityFromDef<any>
-    & E["actions"]
+    & ExtractActions<E["actions"]>
     & E["hooks"]
     & ExtractEntityFields<E["fields"]>
     & { data: ExtractEntityFields<E["fields"]> }

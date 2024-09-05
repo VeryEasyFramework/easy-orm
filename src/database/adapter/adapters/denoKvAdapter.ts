@@ -1,4 +1,5 @@
 import {
+  AdapterColumn,
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
@@ -6,6 +7,7 @@ import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 import type { EntityDefinition } from "#/entity/defineEntityTypes.ts";
 import type { ListOptions } from "#/database/database.ts";
 import type { EasyField } from "#/entity/field/ormField.ts";
+import { raiseOrmException } from "#/ormException.ts";
 
 export interface DenoKvConfig {
   path?: string;
@@ -26,15 +28,54 @@ export class DenoKvAdapter extends DatabaseAdapter<DenoKvConfig> {
   }
   async disconnect(): Promise<void> {
   }
-  async createTable(tableName: string, fields: any): Promise<void> {
+  async createTable(tableName: string): Promise<void> {
+    await this.kv.set(["_tables", tableName], {
+      columns: [],
+    });
+  }
+  async getTableColumns(tableName: string): Promise<AdapterColumn[]> {
+    const result = await this.kv.get<{
+      columns: AdapterColumn[];
+    }>(["_tables", tableName]);
+    return result.value?.columns || [];
+  }
+  async addColumn(tableName: string, easyField: EasyField): Promise<void> {
+    const result = await this.kv.get<{
+      columns: AdapterColumn[];
+    }>(["_tables", tableName]);
+    const columns = result.value?.columns || [];
+    columns.push({
+      name: easyField.key as string,
+      default: easyField.defaultValue,
+      nullable: !easyField.required,
+      primaryKey: easyField.primaryKey || false,
+      type: easyField.fieldType,
+      unique: easyField.unique || false,
+    });
+    await this.kv.set(["_tables", tableName], {
+      columns,
+    });
+    const tableById = `${tableName}:id`;
+    const tableByField = `${tableName}:${easyField.key as string}`;
+    await this.kv.set([tableById], {});
+  }
+  async tableExists(tableName: string): Promise<boolean> {
+    const result = await this.kv.get<any>([tableName]);
+    return result.value !== undefined;
   }
   async dropTable(tableName: string): Promise<void> {
+    await this.kv.delete([tableName]);
   }
   async insert(
     tableName: string,
     id: string,
     data: Record<string, any>,
   ): Promise<any> {
+    const keys = Object.keys(data);
+    await this.kv.set([`${tableName}:id`, id], data);
+    for (const key of keys) {
+      await this.kv.set([`${tableName}:${id}`, key], data[key]);
+    }
   }
   async update(
     tableName: string,
@@ -48,11 +89,47 @@ export class DenoKvAdapter extends DatabaseAdapter<DenoKvConfig> {
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
-    return {} as any;
+    const rows = [];
+    const columns: Record<string, boolean> = {};
+    options = options || {} as ListOptions;
+    const result = this.kv.list<T>({
+      prefix: [`${tableName}:id`],
+    });
+    for await (const { key, value } of result) {
+      const id = key[1];
+      const ckeys = Object.keys(value as Record<string, any>);
+      ckeys.forEach((k) => {
+        columns[k] = true;
+      });
+
+      rows.push(value);
+    }
+    return {
+      data: rows,
+      rowCount: rows.length,
+      totalCount: rows.length,
+      columns: Object.keys(columns),
+    };
   }
 
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
-    return {} as any;
+    const tableByField = `${tableName}:${field}`;
+    const tableById = `${tableName}:id`;
+    const result = await this.kv.get<T>([`${tableName}:id`, value]);
+    if (!result.versionstamp) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Row not found: ${tableName}:${field}:${value}`,
+      );
+    }
+    // const record = await this.kv.get<T>([tableById, result.value]);
+    // if (!record.versionstamp) {
+    //   raiseOrmException(
+    //     "EntityNotFound",
+    //     `Row not found: ${tableName}:${field}:${value}`,
+    //   );
+    // }
+    return result.value;
   }
   async batchUpdateField(
     tableName: string,

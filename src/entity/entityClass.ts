@@ -33,7 +33,7 @@ import {
 const isEmpty = (value: any) => {
   return value === null || value === undefined || value === "";
 };
-class EntityClass {
+export class EntityClass {
   private orm!: Orm;
   private fields!: EasyField[];
 
@@ -183,6 +183,13 @@ class EntityClass {
         );
         continue;
       }
+      if (key === "id") {
+        adaptedData[key] = this.adaptSaveValue(
+          this.orm.idFieldType,
+          changedData[key],
+        );
+        continue;
+      }
       let fieldType: EasyFieldType | undefined;
       this.fields.forEach((field) => {
         if (field.key === key) {
@@ -214,10 +221,11 @@ class EntityClass {
     if (this._isNew) {
       await this.beforeInsert();
       await this.beforeSave();
+      const changed = this.adaptChangedData(this._data);
       await this.orm.database.insertRow(
         this.meta.tableName,
         this.id,
-        this._data,
+        changed,
       );
       await this.afterInsert();
       await this.afterSave();
@@ -387,6 +395,7 @@ class EntityClass {
       if (field.key in data && !isEmpty(data[field.key])) {
         continue;
       }
+
       if (field.defaultValue) {
         data[field.key] = typeof field.defaultValue === "function"
           ? field.defaultValue()
@@ -404,7 +413,9 @@ class EntityClass {
           data[field.key] = 0;
           break;
         default:
-          data[field.key] = null;
+          if (Object.keys(data).includes(field.key as string)) {
+            data[field.key] = null;
+          }
           break;
       }
     }
@@ -442,7 +453,8 @@ class EntityClass {
         );
         for (const connectionField of connectionFields) {
           if (connectionField.key in connectionData) {
-            data[connectionField.key] = connectionData[connectionField.key];
+            data[connectionField.key] =
+              connectionData[connectionField.key as string];
           }
         }
       }
@@ -484,24 +496,27 @@ export function createEntityClass<
         });
       });
     }
-  } as EntityClassConstructor<E>;
+  } as EntityClassConstructor<any>;
 
   for (const hook in entityDef.hooks) {
     const hookKey = hook as keyof EntityHooks;
     const privName = `_${hook}`;
     entityClass.prototype[privName] = entityDef.hooks[hookKey];
   }
-
-  for (const action in entityDef.actions) {
-    entityClass.prototype[action] = entityDef.actions[action];
+  if (entityDef.actions) {
+    for (const action of entityDef.actions) {
+      entityClass.prototype[action.key] = action.action;
+    }
   }
 
   for (const hook in entityDef.hooks) {
     const privName = `_${hook}`;
     entityClass.prototype[privName].bind(entityClass);
   }
-  for (const action in entityDef.actions) {
-    entityClass.prototype[action].bind(entityClass);
+  if (entityDef.actions) {
+    for (const action of entityDef.actions) {
+      entityClass.prototype[action.key].bind(entityClass);
+    }
   }
   return entityClass;
 }

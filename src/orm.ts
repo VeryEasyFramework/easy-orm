@@ -3,23 +3,30 @@ import {
   type DatabaseConfig,
   type ListOptions,
 } from "#/database/database.ts";
-
+import { type BasicFgColor, ColorMe } from "@vef/easy-cli";
 import type {
   CreateEntityFromDef,
   EntityClassConstructor,
   EntityDefFromModel,
   EntityDefinition,
   EntityFromDef,
+  FieldGroup,
   ListEntityFromDef,
 } from "#/entity/defineEntityTypes.ts";
 import type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
 
-import type { EasyFieldTypeMap } from "#/entity/field/fieldTypes.ts";
+import type {
+  EasyFieldType,
+  EasyFieldTypeMap,
+} from "#/entity/field/fieldTypes.ts";
 
 import { createEntityClass } from "#/entity/entityClass.ts";
 import { raiseOrmException } from "#/ormException.ts";
-import { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/ormField.ts";
 import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
+import { migrateEntity } from "#/database/migrate/migrateEntity.ts";
+import type { FieldKey } from "#/entity/defineEntityTypes.ts";
+import { installDatabase } from "#/database/install/installDatabase.ts";
 interface Registry {
   [key: string]: {
     [key: PropertyKey]: {
@@ -49,15 +56,22 @@ export class EasyOrm<
 
   database: Database<D>;
   dbType: D;
+
+  idFieldType: EasyFieldType = "IDField";
   constructor(options: {
     entities: E;
     databaseType: D;
     databaseConfig: DatabaseConfig[D];
+    idFieldType?: EasyFieldType;
   }) {
     this.dbType = options.databaseType;
+    if (options.idFieldType) {
+      this.idFieldType = options.idFieldType;
+    }
     this.database = new Database({
       adapter: options.databaseType,
       config: options.databaseConfig,
+      idFieldType: this.idFieldType,
     });
 
     for (const entity of options.entities) {
@@ -95,6 +109,8 @@ export class EasyOrm<
     for (const entity of this.entityKeys) {
       const entityDef = this.getEntityDef(entity as Ids);
       this.buildConnectionTitleFields(entityDef);
+      this.buildListFields(entityDef);
+      this.buildFieldGroups(entityDef);
     }
   }
   private validateEntities() {
@@ -188,6 +204,66 @@ export class EasyOrm<
     }
     // this.entities[entity.entityId as keyof R] = entity as R[keyof R];
   }
+  private buildFieldGroups(entity: EntityDefinition) {
+    const groups: Record<string, FieldGroup> = {};
+    // Add default group if no group is specified for a field
+    // const defaultGroup = entity.fields.filter((field) => !field.group);
+    // if (defaultGroup.length) {
+    //   groups["default"] = {
+    //     title: "Default",
+    //     key: "default",
+    //     fields: defaultGroup,
+    //   };
+    // }
+
+    // for (const field of entity.fields) {
+    //   if (field.group) {
+    //     if (!groups[field.group]) {
+    //       groups[field.group] = {
+    //         title: field.group,
+    //         key: field.group,
+    //         fields: [],
+    //       };
+    //     }
+    //     groups[field.group].fields.push(field);
+    //   }
+    // }
+
+    // entity.groups = Object.values(groups);
+    return entity;
+  }
+  private buildListFields(entity: EntityDefinition) {
+    const listFields: FieldKey<typeof entity.fields>[] = [];
+    if (entity.titleField) {
+      const titleField = entity.fields.find((field) =>
+        field.key === entity.titleField
+      );
+      if (titleField) {
+        titleField.inList = true;
+        listFields.push(titleField.key);
+      }
+    }
+    for (const field of entity.fields) {
+      if (field.inList) {
+        listFields.push(field.key);
+      }
+      if (field.fieldType === "ConnectionField") {
+        if (field.connectionTitleField) {
+          const connectionTitleField = entity.fields.find((f) =>
+            f.key === field.connectionTitleField
+          );
+          if (connectionTitleField) {
+            connectionTitleField.inList = true;
+            listFields.push(connectionTitleField.key);
+          }
+        }
+      }
+    }
+    listFields.push("createdAt");
+    listFields.push("updatedAt");
+    listFields.push("id");
+    entity.listFields = listFields;
+  }
   private buildConnectionTitleField(
     field: EasyField,
   ) {
@@ -211,7 +287,6 @@ export class EasyOrm<
 
     const titleField = { ...entityTitleField };
     titleField.readOnly = true;
-    titleField.inList = true;
     titleField.fetchOptions = {
       fetchEntity: field.connectionEntity,
       thisIdKey: field.key as string,
@@ -247,23 +322,45 @@ export class EasyOrm<
       field: config.source.field,
     });
   }
+  async install() {
+    await installDatabase({
+      database: this.database,
+    });
+  }
   async migrate(options?: {
     onProgress?: (progress: number, total: number, message: string) => void;
   }): Promise<string[]> {
+    const message = (message: string, color?: BasicFgColor) => {
+      return ColorMe.fromOptions(message, { color });
+    };
+
     const results: string[] = [];
     const total = this.entityKeys.length;
     const progress = options?.onProgress || (() => {});
+    progress(0, total, message("Validating installation", "brightYellow"));
+    await this.install();
+    progress(0, total, message("Installation validated", "brightGreen"));
 
     let count = 0;
-    progress(count, total, "Starting migration");
     for (const entity of this.entityKeys) {
+      progress(
+        count,
+        total,
+        message(`Migrating ${entity as string}`, "brightBlue"),
+      );
       const entityDef = this.getEntityDef(entity as Ids);
-      const res = await this.database.migrateEntity(entityDef);
-      progress(++count, total, `Migrated ${entityDef.entityId}`);
-      if (!res) {
-        continue;
-      }
-      results.push(res);
+      const res = await migrateEntity({
+        database: this.database,
+        entity: entityDef,
+        onOutput: (message) => {
+          progress(count, total, message);
+        },
+      });
+      progress(
+        ++count,
+        total,
+        message(`Migrated ${entity as string}`, "brightGreen"),
+      );
     }
     return results;
   }
@@ -280,9 +377,9 @@ export class EasyOrm<
   ): Promise<EntityFromDef<R[I]>> {
     const entityClass = this.getEntityClass(entity as string);
 
-    const entityInstance = new entityClass() as EntityFromDef<R[I]>;
+    const entityInstance = new entityClass();
     await entityInstance.load(id);
-    return entityInstance as EntityFromDef<R[I]>;
+    return entityInstance as unknown as Promise<EntityFromDef<R[I]>>;
   }
 
   /**
@@ -297,7 +394,7 @@ export class EasyOrm<
     const entityInstance = new entityClass();
     await entityInstance.update(data);
     await entityInstance.save();
-    return entityInstance as EntityFromDef<R[I]>;
+    return entityInstance as unknown as EntityFromDef<R[I]>;
   }
 
   /**
@@ -342,13 +439,8 @@ export class EasyOrm<
     }
     options = options || {};
     if (!options.columns) {
-      options.columns = ["id"];
+      options.columns = entityDef.listFields as string[];
     }
-
-    const listColumns = entityDef.fields.filter((field) => field.inList);
-
-    const columns = listColumns.map((column) => column.key) as string[];
-    options.columns = options.columns.concat(columns);
     if (!options.limit) {
       options.limit = 100;
     }

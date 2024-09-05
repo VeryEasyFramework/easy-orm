@@ -1,4 +1,5 @@
 import {
+  AdapterColumn,
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
@@ -15,6 +16,15 @@ export interface MemcachedConfig extends PoolConfig {
 }
 
 export class MemcachedAdapter extends DatabaseAdapter<MemcachedConfig> {
+  getTableColumns(tableName: string): Promise<AdapterColumn[]> {
+    throw new Error("Method not implemented.");
+  }
+  addColumn(tableName: string, easyField: EasyField): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  tableExists(tableName: string): Promise<boolean> {
+    throw new Error("Method not implemented.");
+  }
   syncTable(tableName: string, entity: EntityDefinition): Promise<string> {
     throw new Error("Method not implemented.");
   }
@@ -103,7 +113,7 @@ export class MemcachedAdapter extends DatabaseAdapter<MemcachedConfig> {
   async disconnect(): Promise<void> {
   }
 
-  async createTable(tableName: string, fields: any): Promise<void> {
+  async createTable(tableName: string): Promise<void> {
   }
 
   async dropTable(tableName: string): Promise<void> {
