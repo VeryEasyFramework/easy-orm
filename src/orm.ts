@@ -9,6 +9,7 @@ import type {
   EntityClassConstructor,
   EntityDefFromModel,
   EntityDefinition,
+  EntityFromDef,
   FieldGroup,
   ListEntityFromDef,
 } from "#/entity/defineEntityTypes.ts";
@@ -373,12 +374,12 @@ export class EasyOrm<
   async getEntity<I extends Ids, E extends R[I]>(
     entity: I,
     id: EasyFieldTypeMap["IDField"],
-  ) {
+  ): Promise<EntityFromDef<R[I]>> {
     const entityClass = this.getEntityClass(entity as string);
 
     const entityInstance = new entityClass();
     await entityInstance.load(id);
-    return entityInstance;
+    return entityInstance as unknown as Promise<EntityFromDef<R[I]>>;
   }
 
   /**
@@ -387,13 +388,13 @@ export class EasyOrm<
   async createEntity<I extends Ids>(
     entity: I,
     data: Partial<CreateEntityFromDef<R[I]>>,
-  ) {
+  ): Promise<EntityFromDef<R[I]>> {
     const entityClass = this.getEntityClass(entity as string);
 
     const entityInstance = new entityClass();
     await entityInstance.update(data);
     await entityInstance.save();
-    return entityInstance;
+    return entityInstance as unknown as EntityFromDef<R[I]>;
   }
 
   /**
@@ -403,7 +404,7 @@ export class EasyOrm<
     entity: I,
     id: string,
     data: Partial<CreateEntityFromDef<R[I]>>,
-  ) {
+  ): Promise<EntityFromDef<R[I]>> {
     const entityInstance = await this.getEntity(entity, id);
     await entityInstance.update(data);
     await entityInstance.save();
