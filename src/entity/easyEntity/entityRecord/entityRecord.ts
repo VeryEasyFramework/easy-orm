@@ -16,6 +16,7 @@ import type { EasyOrm } from "#/orm.ts";
 import { dateUtils } from "#/utils/dateUtils.ts";
 import { generateId, isEmpty } from "#/utils/misc.ts";
 import { validateField } from "#/entity/field/validateField.ts";
+import { SafeReturnType } from "../../../../mod.ts";
 
 export interface EntityRecord {
   beforeInsert(): Promise<void>;
@@ -38,7 +39,7 @@ export class EntityRecord implements EntityRecord {
   private _primaryKey?: string;
   orm!: EasyOrm;
 
-  get primaryKey() {
+  get primaryKey(): string | undefined {
     return this._primaryKey;
   }
   set primaryKey(value: string | undefined) {
@@ -71,7 +72,7 @@ export class EntityRecord implements EntityRecord {
   set updatedAt(value: EasyFieldTypeMap["TimeStampField"]) {
     this._data.updatedAt = value;
   }
-  get data() {
+  get data(): Record<string, SafeType> {
     return this._data;
   }
   entityDefinition!: EntityDefinition;
@@ -171,14 +172,17 @@ export class EntityRecord implements EntityRecord {
     );
   }
 
-  async update(data: Record<string, any>) {
+  async update(data: Record<string, any>): Promise<void> {
     data = this.validateFieldTypes(data);
     this._prevData = { ...this._data };
     const mergedData = { ...this._data, ...data };
     await this.validate(mergedData);
   }
 
-  async runAction(actionKey: string, data?: Record<string, SafeType>) {
+  async runAction(
+    actionKey: string,
+    data?: Record<string, SafeType>,
+  ): Promise<void | SafeType> {
     const action = this.actions[actionKey];
     if (!action) {
       raiseOrmException(

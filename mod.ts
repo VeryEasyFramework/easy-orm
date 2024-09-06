@@ -1,16 +1,23 @@
-export { EasyEntity } from "./src/entity/easyEntity/entityDefinition/easyEntity.ts";
-
+export { EasyEntity } from "#/entity/easyEntity/entityDefinition/easyEntity.ts";
+export type { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
 export { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
-export type { EntityDefinition } from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
+export type {
+  EasyEntityConfig,
+  EntityAction,
+  EntityDefinition,
+  EntityHook,
+  FieldGroup,
+} from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
 export { OrmException } from "#/ormException.ts";
 
 export { EasyOrm } from "#/orm.ts";
-export { defineEntityNew } from "#/entity/defineEntityNew.ts";
 
 export type { EasyField } from "#/entity/field/easyField.ts";
 export type {
   EasyFieldType,
   EasyFieldTypeMap,
+  SafeReturnType,
+  SafeType,
 } from "#/entity/field/fieldTypes.ts";
 export type { ListOptions } from "#/database/database.ts";
 export type { AdapterMap } from "#/database/database.ts";

@@ -242,7 +242,7 @@ export class EasyOrm<
     value: any,
     filters: Record<string, any>,
   ) {
-    const entityDef = this.getEntityDef(entityId);
+    const entityDef: EntityDefinition = this.getEntityDef(entityId);
     await this.database.batchUpdateField(
       entityDef.config.tableName,
       field,
@@ -254,7 +254,7 @@ export class EasyOrm<
    *  Getters for entity definitions
    */
 
-  getEasyEntityDef(entityId: string) {
+  getEasyEntityDef(entityId: string): EasyEntity {
     const entity = this.easyEntities.find((e) => e.entityId === entityId);
     if (!entity) {
       raiseOrmException(
