@@ -18,7 +18,10 @@ type OrmExceptionType =
   | "InvalidId"
   | "NotImplemented"
   | "InvalidFieldGroup"
-  | "InvalidOperation";
+  | "InvalidOperation"
+  | "InvalidAction"
+  | "MissingActionParam";
+
 export class OrmException extends Error {
   type: OrmExceptionType;
   constructor(type: OrmExceptionType, message: string) {

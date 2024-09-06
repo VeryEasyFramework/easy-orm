@@ -28,7 +28,7 @@ export function buildEasyEntity(
 function buildConnectionTitleFields(orm: EasyOrm, easyEntity: EasyEntity) {
   const fields = easyEntity.fields.filter((field) =>
     field.fieldType === "ConnectionField"
-  ) as EasyField<PropertyKey, "ConnectionField">[];
+  );
   for (const field of fields) {
     const titleField = buildConnectionTitleField(orm, field);
     if (!titleField) {

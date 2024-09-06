@@ -1,4 +1,5 @@
 import type { EasyField } from "#/entity/field/easyField.ts";
+
 import { raiseOrmException } from "#/ormException.ts";
 
 import type {
@@ -34,11 +35,7 @@ export class EasyEntity {
     description?: string;
   }) {
     this.entityId = toCamelCase(camelToSnakeCase(entityId));
-    this.fieldGroups = [{
-      key: "default",
-      title: "Default",
-      description: "The default field group",
-    }];
+    this.fieldGroups = [];
     this.fields = [];
     this.actions = [];
 

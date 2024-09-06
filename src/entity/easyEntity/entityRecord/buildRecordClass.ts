@@ -1,44 +1,60 @@
-import {
+import type {
+  EntityAction,
   EntityDefinition,
   EntityHook,
   EntityHookDefinition,
 } from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
 import { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
-import { HookFunction } from "#/entity/easyEntity/entityRecord/entityRecordTypes.ts";
+import type {
+  ActionFunction,
+  HookFunction,
+} from "#/entity/easyEntity/entityRecord/entityRecordTypes.ts";
+import { EasyOrm } from "#/orm.ts";
 
-export function buildRecordClass(entity: EntityDefinition) {
+export function buildRecordClass(orm: EasyOrm, entity: EntityDefinition) {
   const hooks = extractHooks(entity);
+  const actions = extractActions(entity);
   const entityRecordClass = class extends EntityRecord {
+    entityDefinition = entity;
     _beforeInsert: Array<HookFunction> = hooks.beforeInsert;
-    _afterInsert: Array<HookFunction> = hooks.afterInsert;
-    _beforeSave: Array<HookFunction> = hooks.beforeSave;
 
+    _afterInsert: Array<HookFunction> = hooks.afterInsert;
+
+    _beforeSave: Array<HookFunction> = hooks.beforeSave;
     _afterSave: Array<HookFunction> = hooks.afterSave;
 
     _validate: Array<HookFunction> = hooks.validate;
-    entityDefinition = entity;
-  };
-  bindHooks(entityRecordClass);
 
+    actions: Record<string, EntityAction> = actions;
+    orm = orm;
+  };
+
+  // entityRecordClass = bindHooks(entityRecordClass, entity);
+  setFields(entityRecordClass, entity);
   return entityRecordClass;
 }
 
-function bindHooks(entityRecordClass: typeof EntityRecord) {
-  entityRecordClass.prototype["_beforeInsert"].forEach((hook) => {
-    hook.bind(entityRecordClass);
+function extractActions(entity: EntityDefinition) {
+  const actions: Record<string, EntityAction> = {};
+  entity.actions.forEach((action) => {
+    actions[action.key] = action;
   });
-  entityRecordClass.prototype["_afterInsert"].forEach((hook) => {
-    hook.bind(entityRecordClass);
-  });
-  entityRecordClass.prototype["_beforeSave"].forEach((hook) => {
-    hook.bind(entityRecordClass);
-  });
-  entityRecordClass.prototype["_afterSave"].forEach((hook) => {
-    hook.bind(entityRecordClass);
-  });
+  return actions;
+}
 
-  entityRecordClass.prototype["_validate"].forEach((hook) => {
-    hook.bind(entityRecordClass);
+function setFields(
+  entityRecordClass: typeof EntityRecord,
+  entity: EntityDefinition,
+) {
+  entity.fields.forEach((field) => {
+    Object.defineProperty(entityRecordClass.prototype, field.key, {
+      get: function () {
+        return this._data[field.key];
+      },
+      set: function (value) {
+        this._data[field.key] = value;
+      },
+    });
   });
 }
 
@@ -48,7 +64,7 @@ function extractHooks(entity: EntityDefinition) {
       return hookAction.action;
     });
   };
-  const hooks: Record<EntityHook, Array<() => Promise<void> | void>> = {
+  const hooks: Record<EntityHook, HookFunction[]> = {
     beforeInsert: [],
     afterInsert: [],
     beforeSave: [],

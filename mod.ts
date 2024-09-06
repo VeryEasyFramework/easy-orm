@@ -1,8 +1,7 @@
 export { EasyEntity } from "./src/entity/easyEntity/entityDefinition/easyEntity.ts";
 
-export { defineEntity } from "#/entity/defineEntity.ts";
 export { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
-
+export type { EntityDefinition } from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
 export { OrmException } from "#/ormException.ts";
 
 export { EasyOrm } from "#/orm.ts";

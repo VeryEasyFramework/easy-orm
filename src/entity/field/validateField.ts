@@ -1,5 +1,6 @@
 import { raiseOrmException } from "#/ormException.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
+import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export function validateBoolean(field: EasyField, value: any): boolean {
   let hasError = false;
@@ -347,5 +348,68 @@ export function validatePhone(field: EasyField, value: any): string {
       }: ${value}`,
     );
   }
+  return value;
+}
+
+export function validateField(field: EasyField, value: any) {
+  switch (field.fieldType as EasyFieldType) {
+    case "BooleanField":
+      value = validateBoolean(field, value);
+      break;
+    case "DateField":
+      value = validateDate(field, value);
+      break;
+    case "IntField":
+      value = validateInt(field, value);
+      break;
+    case "BigIntField":
+      value = validateBigInt(field, value);
+      break;
+    case "DecimalField":
+      value = validateDecimal(field, value);
+      break;
+    case "DataField":
+      value = validateData(field, value);
+      break;
+    case "JSONField":
+      value = validateJson(field, value);
+      break;
+    case "EmailField":
+      value = validateEmail(field, value);
+      break;
+    case "ImageField":
+      raiseOrmException("NotImplemented", "ImageField is not supported yet");
+      break;
+    case "TextField":
+      value = validateTextField(field, value);
+      break;
+    case "ChoicesField":
+      value = validateChoices(field, value);
+      break;
+    case "MultiChoiceField":
+      value = validateMultiChoices(field, value);
+      break;
+    case "PasswordField":
+      value = validatePassword(field, value);
+      break;
+    case "PhoneField":
+      value = validatePhone(field, value);
+      break;
+    case "TimeStampField":
+      value = validateTimeStamp(field, value);
+      break;
+    case "ConnectionField":
+      raiseOrmException(
+        "InvalidFieldType",
+        `ConnectionField ${field.key as string} must be handled separately`,
+      );
+      break;
+    default:
+      raiseOrmException(
+        "NotImplemented",
+        `Field type ${field.fieldType} is not implemented`,
+      );
+  }
+
   return value;
 }

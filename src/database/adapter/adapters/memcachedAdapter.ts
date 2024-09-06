@@ -1,15 +1,15 @@
 import {
-  AdapterColumn,
+  type AdapterColumn,
   DatabaseAdapter,
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
 import type { ListOptions } from "#/database/database.ts";
-import { EasyField } from "../../../entity/field/easyField.ts";
-import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
+import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 import { MemcachePool } from "./memcached/mcPool.ts";
 import type { PoolConfig } from "./memcached/mcTypes.ts";
-import { EntityDefinition } from "../../../entity/defineEntityTypes.ts";
+import type { EntityDefinition } from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
 {
 }
 export interface MemcachedConfig extends PoolConfig {

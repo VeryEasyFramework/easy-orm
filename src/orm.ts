@@ -103,7 +103,7 @@ export class EasyOrm<
 
   private createEntityClasses() {
     for (const entityDefinition of Object.values(this.entities)) {
-      const entityRecordClass = buildRecordClass(entityDefinition);
+      const entityRecordClass = buildRecordClass(this, entityDefinition);
       this.entityClasses[entityDefinition.entityId] = entityRecordClass;
     }
   }

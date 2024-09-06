@@ -1,5 +1,10 @@
 import type { EasyField } from "../../field/easyField.ts";
-import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import type {
+  EasyFieldType,
+  SafeReturnType,
+  SafeType,
+} from "#/entity/field/fieldTypes.ts";
+import { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
 
 export interface FieldGroupDefinition {
   key: string;
@@ -30,7 +35,7 @@ export type EntityHook =
 export interface EntityHookDefinition {
   label?: string;
   description?: string;
-  action(): Promise<void> | void;
+  action(entity: EntityRecord): Promise<void> | void;
 }
 
 export type EasyEntityHooks = Record<EntityHook, Array<EntityHookDefinition>>;
@@ -43,8 +48,15 @@ export interface EntityActionParam {
 export interface EntityActionDefinition {
   label?: string;
   description?: string;
-  action(params?: Record<string, any>): Promise<void> | void;
+  action(
+    entity: EntityRecord,
+    params?: Record<string, SafeType>,
+  ): SafeReturnType;
   params?: Array<EntityActionParam>;
+}
+
+export interface EntityAction extends EntityActionDefinition {
+  key: string;
 }
 
 export interface EntityDefinition {
@@ -54,5 +66,5 @@ export interface EntityDefinition {
   listFields: Array<string>;
   config: EasyEntityConfig;
   hooks: EasyEntityHooks;
-  actions: Array<EntityActionDefinition>;
+  actions: Array<EntityAction>;
 }

@@ -1,5 +1,5 @@
-import { EntityDefinition } from "./entityDefTypes.ts";
-import { EasyOrm } from "#/orm.ts";
+import type { EntityDefinition } from "./entityDefTypes.ts";
+import type { EasyOrm } from "#/orm.ts";
 import { raiseOrmException } from "#/ormException.ts";
 
 export function validateEntityDefinition(

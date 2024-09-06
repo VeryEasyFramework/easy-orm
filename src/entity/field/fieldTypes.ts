@@ -24,3 +24,5 @@ export interface EasyFieldTypeMap {
 export type EasyFieldType = keyof EasyFieldTypeMap;
 
 export type SafeType = EasyFieldTypeMap[EasyFieldType];
+
+export type SafeReturnType = Promise<SafeType | void> | SafeType | void;
