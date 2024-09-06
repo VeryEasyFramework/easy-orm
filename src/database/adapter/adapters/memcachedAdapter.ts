@@ -4,7 +4,7 @@ import {
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
 import type { ListOptions } from "#/database/database.ts";
-import { EasyField } from "#/entity/field/ormField.ts";
+import { EasyField } from "../../../entity/field/easyField.ts";
 import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 import { MemcachePool } from "./memcached/mcPool.ts";

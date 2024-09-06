@@ -1,8 +1,7 @@
-import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
 import type {
   ActionDef,
   EntityConfig,
-  EntityDef,
   EntityHooks,
   ExtractActions,
   ExtractEntityFields,

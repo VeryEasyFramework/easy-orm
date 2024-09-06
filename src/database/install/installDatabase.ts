@@ -1,5 +1,5 @@
-import { Database, DatabaseConfig } from "#/database/database.ts";
-import { EasyField } from "#/entity/field/ormField.ts";
+import type { Database, DatabaseConfig } from "#/database/database.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
 
 export async function installDatabase(options: {
   database: Database<keyof DatabaseConfig>;

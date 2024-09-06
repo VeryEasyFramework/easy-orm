@@ -1,5 +1,3 @@
-import { EasyField } from "#/entity/field/ormField.ts";
-
 /**
  * The field types that are available in Easy ORM.
  */
@@ -21,7 +19,8 @@ export interface EasyFieldTypeMap {
   JSONField: Record<string, any>;
   PhoneField: string;
   ConnectionField: string;
-  FetchField: string | string[] | Record<string, any> | number | Date;
 }
 
 export type EasyFieldType = keyof EasyFieldTypeMap;
+
+export type SafeType = EasyFieldTypeMap[EasyFieldType];

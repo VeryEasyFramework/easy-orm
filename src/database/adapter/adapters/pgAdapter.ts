@@ -1,4 +1,4 @@
-import type { ListOptions } from "../../database.ts";
+import type { ListOptions } from "#/database/database.ts";
 import {
   type AdapterColumn,
   DatabaseAdapter,
@@ -8,7 +8,7 @@ import { camelToSnakeCase, toCamelCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
-import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export interface PostgresConfig {

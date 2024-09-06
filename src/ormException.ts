@@ -16,8 +16,9 @@ type OrmExceptionType =
   | "InvalidOffset"
   | "InvalidPage"
   | "InvalidId"
-  | "NotImplemented";
-
+  | "NotImplemented"
+  | "InvalidFieldGroup"
+  | "InvalidOperation";
 export class OrmException extends Error {
   type: OrmExceptionType;
   constructor(type: OrmExceptionType, message: string) {

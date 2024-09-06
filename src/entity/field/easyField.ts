@@ -3,6 +3,9 @@ import type {
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
 
+export type ExtractFieldKey<T> = T extends EasyField<infer K, infer T> ? K
+  : never;
+
 /**
  * The choice definition for a field that's set to `ChoicesField` or `MultiChoiceField`.
  */
@@ -15,23 +18,25 @@ interface Choice {
  * The connected entity definition for a field that's set to `ConnectionField`.
  */
 
-interface FetchOptions {
+export interface FetchOptions {
   fetchEntity: string; // entity name
   thisIdKey: string; // local id key
   thisFieldKey: string; // local field key
   thatFieldKey: string; // foreign field key
 }
-export interface FieldGroupDef {
-  title: string;
-  description?: string;
-}
+
 /**
  * The field definition for a field in an entity.
  */
-export interface EasyFieldDef<
+export interface EasyField<
+  P extends PropertyKey = PropertyKey,
   T extends EasyFieldType = EasyFieldType,
-  G extends PropertyKey = PropertyKey,
 > {
+  /**
+   * The key of the field. This is how the field will be accessed in the entity.
+   */
+  key: string;
+
   /**
    * The label of the field. This is how the field will be displayed in the UI.
    */
@@ -129,7 +134,7 @@ export interface EasyFieldDef<
   hidden?: boolean;
 
   /**
-   * The field group that the field belongs to.
+   * The group that the field belongs to.
    */
-  group?: G;
+  group?: string;
 }

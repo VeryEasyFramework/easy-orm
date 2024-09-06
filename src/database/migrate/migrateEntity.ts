@@ -1,8 +1,6 @@
 import type { Database, DatabaseConfig } from "#/database/database.ts";
 import type { EntityDefinition } from "#/entity/defineEntityTypes.ts";
-import type { EasyField } from "#/entity/field/ormField.ts";
-import { Orm } from "../../../mod.ts";
-import { raiseOrmException } from "#/ormException.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
 
 const idField: EasyField = {
   key: "id",

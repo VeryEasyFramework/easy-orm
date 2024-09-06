@@ -5,7 +5,7 @@ import type {
   EntityHooks,
   Orm,
 } from "#/entity/defineEntityTypes.ts";
-import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "./field/easyField.ts";
 import type {
   EasyFieldType,
   EasyFieldTypeMap,
@@ -33,9 +33,8 @@ import {
 const isEmpty = (value: any) => {
   return value === null || value === undefined || value === "";
 };
-export class EntityClass {
+class Entity {
   private orm!: Orm;
-  private fields!: EasyField[];
 
   private meta!: EntityDefinition;
   private _primaryKey?: string;
@@ -462,7 +461,7 @@ export class EntityClass {
     return data;
   }
 }
-export function createEntityClass<
+function createEntityClass<
   D extends EntityDefinition,
   E extends EntityDefFromModel<D>,
 >(

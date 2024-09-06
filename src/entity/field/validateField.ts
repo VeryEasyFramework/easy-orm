@@ -1,5 +1,5 @@
 import { raiseOrmException } from "#/ormException.ts";
-import { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
 
 export function validateBoolean(field: EasyField, value: any): boolean {
   let hasError = false;

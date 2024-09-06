@@ -3,10 +3,10 @@ import type {
   EasyFieldType,
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
-import type { EasyField, ExtractFieldKey } from "./field/ormField.ts";
+import type { EasyField, ExtractFieldKey } from "./field/easyField.ts";
 import type { EasyOrm } from "../orm.ts";
 
-export interface EntityHooks {
+interface EntityHooks {
   beforeSave(): Promise<void>;
   afterSave(): Promise<void>;
   beforeInsert(): Promise<void>;
@@ -14,30 +14,30 @@ export interface EntityHooks {
   validate(): Promise<void>;
 }
 
-export type Orm = EasyOrm<
+type Orm = EasyOrm<
   keyof DatabaseConfig,
   Array<EntityDefinition>,
   any,
   any,
   any
 >;
-export type FieldGroupDef<F extends EasyField[]> = Record<string, {
+type FieldGroupDef<F extends EasyField[]> = Record<string, {
   title: string;
   description?: string;
   fields: F[number]["key"][];
 }>;
-export type ExtractEntityFields<F extends EasyField[]> = {
+type ExtractEntityFields<F extends EasyField[]> = {
   [K in F[number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
 };
 
-export type FieldKey<F extends EasyField[]> = F[number]["key"];
+type FieldKey<F extends EasyField[]> = F[number]["key"];
 
-export interface FieldGroup {
+interface FieldGroup {
   title: string;
   key: string;
   fields: EasyField[];
 }
-export type EntityDef<
+type EntityDef<
   Id extends string,
   P extends PropertyKey,
   T extends EasyFieldType,
@@ -60,22 +60,22 @@ export type EntityDef<
   actions: A;
 };
 
-export interface ActionDef<T> {
+interface ActionDef<T> {
   label?: string;
   public?: boolean;
   action(this: T, ...args: any[]): Promise<any> | any;
   description?: string;
 }
 
-export type ActionsDef<A extends ActionsDef<A, T>, T> = {
+type ActionsDef<A extends ActionsDef<A, T>, T> = {
   [K in keyof A]: ActionDef<T>;
 };
-export type ExtractActions<A> = A extends ActionDef<infer T> ? {
+type ExtractActions<A> = A extends ActionDef<infer T> ? {
     [K in keyof A]: ActionDef<T>;
   }
   : never;
 
-export type EntityDefinition<Id extends string = string> = EntityDef<
+type EntityDefinition<Id extends string = string> = EntityDef<
   Id,
   PropertyKey,
   EasyFieldType,
@@ -84,19 +84,19 @@ export type EntityDefinition<Id extends string = string> = EntityDef<
   ActionDef<any>
 >;
 
-export type EntityIds<E extends EntityDefinition[]> = E[number]["entityId"];
+type EntityIds<E extends EntityDefinition[]> = E[number]["entityId"];
 
-export type EntityDefFromModel<M> = M extends
+type EntityDefFromModel<M> = M extends
   EntityDef<infer Id, infer P, infer T, infer F, infer AP, infer A>
   ? EntityDef<Id, P, T, F, AP, A>
   : never;
 
-export interface BaseFields {
+interface BaseFields {
   id: EasyFieldTypeMap["IDField"];
   createdAt: EasyFieldTypeMap["DateField"];
   updatedAt: EasyFieldTypeMap["DateField"];
 }
-export type EntityFromDef<E> = E extends
+type EntityFromDef<E> = E extends
   EntityDef<infer Id, infer P, infer T, infer F, infer AP, infer A> ?
     & {
       [K in E["fields"][number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
@@ -111,13 +111,13 @@ export type EntityFromDef<E> = E extends
     }
   : never;
 
-export type CreateEntityFromDef<E> = E extends
+type CreateEntityFromDef<E> = E extends
   EntityDef<infer Id, infer P, infer T, infer F, infer AP, infer A> ? {
     [K in E["fields"][number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
   }
   : never;
 
-export type ListEntityFromDef<E> = E extends
+type ListEntityFromDef<E> = E extends
   EntityDef<infer Id, infer P, infer T, infer F, infer AP, infer A> ?
     & {
       [K in E["fields"][number] as K["key"]]: EasyFieldTypeMap[K["fieldType"]];
@@ -125,11 +125,11 @@ export type ListEntityFromDef<E> = E extends
     & BaseFields
   : never;
 
-export interface EntityConfig {
+interface EntityConfig {
   tableName?: string;
 }
 
-export interface EntityClassConstructor<E extends EntityDefinition> {
+interface EntityClassConstructor<E extends EntityDefinition> {
   orm: Orm;
   fields: E["fields"];
   new ():

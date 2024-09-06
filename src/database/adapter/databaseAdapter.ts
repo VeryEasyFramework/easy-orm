@@ -1,6 +1,5 @@
-import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "../../entity/field/easyField.ts";
 
-import type { EntityDefinition } from "#/entity/defineEntityTypes.ts";
 import type * as databaseTs from "#/database/database.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 

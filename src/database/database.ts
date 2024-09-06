@@ -11,12 +11,11 @@ import {
   type JSONConfig,
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
-import type { EasyField } from "#/entity/field/ormField.ts";
-import { EntityDefinition } from "#/entity/defineEntityTypes.ts";
-import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
+import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 import {
   DenoKvAdapter,
-  DenoKvConfig,
+  type DenoKvConfig,
 } from "#/database/adapter/adapters/denoKvAdapter.ts";
 
 export interface AdvancedFilter {

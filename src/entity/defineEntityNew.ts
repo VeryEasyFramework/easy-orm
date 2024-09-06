@@ -1,5 +1,6 @@
-import type { EasyField } from "#/entity/field/ormField.ts";
+import type { EasyField } from "./field/easyField.ts";
 import type {
+  ActionsDef,
   EntityConfig,
   EntityDef,
   EntityHooks,
@@ -19,33 +20,62 @@ type ExtractEntityFields<F> = F extends
   ? { [K in keyof F]: EasyFieldTypeMap[F[K]["fieldType"]] }
   : never;
 
-type ExtractActions<
-  A extends {
-    [K in keyof A]: InferredAction<Action<any, any>>;
-  },
-> = { [K in keyof A]: A[K]["action"] };
-type Action<
-  P extends {
-    [K in keyof P]: {
-      required: boolean;
-      type: keyof EasyFieldTypeMap;
-    };
-  },
-  D extends {
-    [E in keyof P]: EasyFieldTypeMap[P[E]["type"]];
-  },
-> = {
-  description?: string;
-  action: (
-    data: D,
-  ) => Promise<any> | any;
-  params?: P;
-  public?: boolean;
+type AParams<P extends PropertyKey> = {
+  [K in P]: {
+    required: boolean;
+    type: keyof EasyFieldTypeMap;
+  };
 };
 
-export type InferredAction<A> = A extends Action<infer P, infer D>
-  ? Action<P, D>
+type HookDef<T> = {
+  label?: string;
+  description?: string;
+  action(): Promise<void> | void;
+} & ThisType<T>;
+
+interface HooksDef<T> {
+  beforeSave?: Array<HookDef<T>>;
+  afterSave?: Array<HookDef<T>>;
+  beforeInsert?: Array<HookDef<T>>;
+  afterInsert?: Array<HookDef<T>>;
+  validate?: Array<HookDef<T>>;
+}
+
+type SafeType = EasyFieldTypeMap[EasyFieldType];
+type SafeReturnType = SafeType | SafeType[] | Record<string, SafeType> | Record<
+  string,
+  SafeType
+>[] | void;
+interface BaseActions {
+  save(): Promise<void>;
+  update(): Promise<void>;
+  delete(): Promise<void>;
+  load(): Promise<void>;
+}
+
+type BaseThis =
+  & {
+    orm: Orm;
+  }
+  & BaseActions
+  & EntityHooks;
+
+interface ActionDef<T> {
+  description?: string;
+
+  action(
+    this: BaseThis & T & { [K in keyof A]: A[K] },
+    ...params: any[]
+  ): Promise<SafeReturnType> | SafeReturnType;
+}
+
+type ExtractActions<A> = A extends Record<PropertyKey, ActionDef<any>> ? {
+    [K in keyof A]: (
+      ...args: Parameters<A[K]["action"]>
+    ) => ReturnType<A[K]["action"]>;
+  }
   : never;
+
 export function defineEntityNew<
   Id extends string,
   GP extends PropertyKey,
@@ -55,12 +85,8 @@ export function defineEntityNew<
   F extends {
     [K in FP]: EasyFieldDef<T, keyof G>;
   },
-  H extends Partial<EntityHooks>,
   AP extends PropertyKey,
-  AC extends Action<any, any>,
-  A extends {
-    [K in AP]: InferredAction<AC>;
-  },
+  A extends Record<AP, ActionDef<ExtractEntityFields<F>>>,
 >(entityId: Id, options: {
   label: string;
   description?: string;
@@ -73,16 +99,8 @@ export function defineEntityNew<
   fieldGroups?: Record<GP, FieldGroupDef>;
   tableName?: string;
   config?: EntityConfig;
-  hooks?:
-    & H
-    & ThisType<
-      EntityHooks & ExtractEntityFields<F> & {
-        orm: Orm;
-      }
-    >;
-  actions?:
-    & A
-    & ThisType<ExtractEntityFields<F> & ExtractActions<A>>;
+  hooks?: HooksDef<BaseThis & ExtractEntityFields<F> & ExtractActions<A>>;
+  actions?: A;
 }) {
   const output = {
     entityId,
