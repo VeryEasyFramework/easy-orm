@@ -58,7 +58,7 @@ export class EasyEntity {
    }
    setConfig(config: Partial<EasyEntityConfig>) {
       Object.entries(config).forEach(([key, value]) => {
-         this.config[key as keyof EasyEntityConfig] = value;
+         this.config[key as keyof EasyEntityConfig] = value as any;
       });
    }
 

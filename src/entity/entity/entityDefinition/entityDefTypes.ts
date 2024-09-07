@@ -24,6 +24,8 @@ export interface EasyEntityConfig {
    description: string;
    titleField?: string;
    tableName: string;
+   orderField?: string;
+   orderDirection?: "asc" | "desc";
 }
 
 export type EntityHook = keyof EasyEntityHooks;
