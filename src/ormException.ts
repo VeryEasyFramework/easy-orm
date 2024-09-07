@@ -16,7 +16,11 @@ type OrmExceptionType =
   | "InvalidOffset"
   | "InvalidPage"
   | "InvalidId"
-  | "NotImplemented";
+  | "NotImplemented"
+  | "InvalidFieldGroup"
+  | "InvalidOperation"
+  | "InvalidAction"
+  | "MissingActionParam";
 
 export class OrmException extends Error {
   type: OrmExceptionType;

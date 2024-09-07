@@ -3,9 +3,6 @@ import type {
   EasyFieldTypeMap,
 } from "#/entity/field/fieldTypes.ts";
 
-export type ExtractFieldKey<T> = T extends EasyField<infer K, infer T> ? K
-  : never;
-
 /**
  * The choice definition for a field that's set to `ChoicesField` or `MultiChoiceField`.
  */
@@ -28,14 +25,11 @@ export interface FetchOptions {
 /**
  * The field definition for a field in an entity.
  */
-export interface EasyField<
-  P extends PropertyKey = PropertyKey,
-  T extends EasyFieldType = EasyFieldType,
-> {
+export interface EasyField {
   /**
    * The key of the field. This is how the field will be accessed in the entity.
    */
-  key: P;
+  key: string;
 
   /**
    * The label of the field. This is how the field will be displayed in the UI.
@@ -92,7 +86,7 @@ export interface EasyField<
    *
    * **IDField**: ID.
    */
-  fieldType: T;
+  fieldType: EasyFieldType;
 
   /**
    * Set to true if the field is the primary key of the entity.
@@ -117,7 +111,9 @@ export interface EasyField<
   /**
    * The default value of the field. Can be a value or a function that returns a value.
    */
-  defaultValue?: EasyFieldTypeMap[T] | (() => EasyFieldTypeMap[T]);
+  defaultValue?:
+    | EasyFieldTypeMap[EasyFieldType]
+    | (() => EasyFieldTypeMap[EasyFieldType]);
 
   connectionEntity?: string;
 
@@ -132,4 +128,9 @@ export interface EasyField<
    * Set to true if the field should be hidden in the UI.
    */
   hidden?: boolean;
+
+  /**
+   * The group that the field belongs to.
+   */
+  group?: string;
 }
