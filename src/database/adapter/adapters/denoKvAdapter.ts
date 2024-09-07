@@ -4,7 +4,7 @@ import {
   type RowsResult,
 } from "#/database/adapter/databaseAdapter.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
-import type { EntityDefinition } from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
+import type { EntityDefinition } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 import type { ListOptions } from "#/database/database.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 import { raiseOrmException } from "#/ormException.ts";

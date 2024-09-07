@@ -8,7 +8,7 @@ import type {
   EntityHook,
   EntityHookDefinition,
   FieldGroupDefinition,
-} from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
+} from "./entityDefTypes.ts";
 import {
   camelToSnakeCase,
   camelToTitleCase,

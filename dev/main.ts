@@ -1,5 +1,5 @@
 import { EasyOrm } from "#/orm.ts";
-import { EasyEntity } from "#/entity/easyEntity/easyEntity.ts";
+import { EasyEntity } from "#/entity/entity/easyEntity.ts";
 
 const userEntity = new EasyEntity("user");
 

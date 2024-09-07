@@ -17,13 +17,13 @@ import { raiseOrmException } from "#/ormException.ts";
 import { migrateEntity } from "#/database/migrate/migrateEntity.ts";
 
 import { installDatabase } from "#/database/install/installDatabase.ts";
-import type { EasyEntity } from "./entity/easyEntity/entityDefinition/easyEntity.ts";
-import type { EntityDefinition } from "./entity/easyEntity/entityDefinition/entityDefTypes.ts";
-import { buildEasyEntity } from "./entity/easyEntity/entityDefinition/buildEasyEntity.ts";
-import { validateEntityDefinition } from "./entity/easyEntity/entityDefinition/validateEasyEntity.ts";
+import type { EasyEntity } from "#/entity/entity/entityDefinition/easyEntity.ts";
+import type { EntityDefinition } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
+import { buildEasyEntity } from "#/entity/entity/entityDefinition/buildEasyEntity.ts";
+import { validateEntityDefinition } from "#/entity/entity/entityDefinition/validateEasyEntity.ts";
 import { FetchRegistry } from "#/entity/registry.ts";
-import { buildRecordClass } from "#/entity/easyEntity/entityRecord/buildRecordClass.ts";
-import type { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
+import { buildRecordClass } from "#/entity/entity/entityRecord/buildRecordClass.ts";
+import type { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
 
 export class EasyOrm<
   D extends keyof DatabaseConfig = keyof DatabaseConfig,

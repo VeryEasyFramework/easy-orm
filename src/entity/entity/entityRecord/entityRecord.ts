@@ -1,11 +1,8 @@
 import type {
   EntityAction,
   EntityDefinition,
-} from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
-import type {
-  ActionFunction,
-  HookFunction,
-} from "#/entity/easyEntity/entityRecord/entityRecordTypes.ts";
+} from "#/entity/entity/entityDefinition/entityDefTypes.ts";
+import type { HookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
 import type {
   EasyFieldType,
   EasyFieldTypeMap,
@@ -16,7 +13,6 @@ import type { EasyOrm } from "#/orm.ts";
 import { dateUtils } from "#/utils/dateUtils.ts";
 import { generateId, isEmpty } from "#/utils/misc.ts";
 import { validateField } from "#/entity/field/validateField.ts";
-import { SafeReturnType } from "../../../../mod.ts";
 
 export interface EntityRecord {
   beforeInsert(): Promise<void>;

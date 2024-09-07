@@ -3,13 +3,10 @@ import type {
   EntityDefinition,
   EntityHook,
   EntityHookDefinition,
-} from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
-import { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
-import type {
-  ActionFunction,
-  HookFunction,
-} from "#/entity/easyEntity/entityRecord/entityRecordTypes.ts";
-import { EasyOrm } from "#/orm.ts";
+} from "#/entity/entity/entityDefinition/entityDefTypes.ts";
+import { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
+import type { HookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
+import type { EasyOrm } from "#/orm.ts";
 
 export function buildRecordClass(orm: EasyOrm, entity: EntityDefinition) {
   const hooks = extractHooks(entity);

@@ -1,5 +1,5 @@
-import type { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
-import { SafeReturnType, SafeType } from "#/entity/field/fieldTypes.ts";
+import type { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
+import type { SafeReturnType, SafeType } from "#/entity/field/fieldTypes.ts";
 
 export type HookFunction = (entity: EntityRecord) => Promise<void> | void;
 

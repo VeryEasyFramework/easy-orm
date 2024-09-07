@@ -1,10 +1,10 @@
-import type { EasyField } from "../../field/easyField.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
 import type {
   EasyFieldType,
   SafeReturnType,
   SafeType,
 } from "#/entity/field/fieldTypes.ts";
-import { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
+import type { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
 
 export interface FieldGroupDefinition {
   key: string;

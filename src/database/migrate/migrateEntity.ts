@@ -1,5 +1,5 @@
 import type { Database, DatabaseConfig } from "#/database/database.ts";
-import type { EntityDefinition } from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
+import type { EntityDefinition } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 
 const idField: EasyField = {

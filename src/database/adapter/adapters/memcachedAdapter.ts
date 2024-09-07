@@ -7,9 +7,9 @@ import type { ListOptions } from "#/database/database.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
-import { MemcachePool } from "./memcached/mcPool.ts";
+import { MemcachePool } from "#/database/adapter/adapters/memcached/mcPool.ts";
 import type { PoolConfig } from "./memcached/mcTypes.ts";
-import type { EntityDefinition } from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
+import type { EntityDefinition } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 {
 }
 export interface MemcachedConfig extends PoolConfig {

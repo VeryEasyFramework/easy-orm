@@ -1,5 +1,5 @@
-export { EasyEntity } from "#/entity/easyEntity/entityDefinition/easyEntity.ts";
-export type { EntityRecord } from "#/entity/easyEntity/entityRecord/entityRecord.ts";
+export { EasyEntity } from "#/entity/entity/entityDefinition/easyEntity.ts";
+export type { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
 export { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
 export type {
   EasyEntityConfig,
@@ -7,7 +7,7 @@ export type {
   EntityDefinition,
   EntityHook,
   FieldGroup,
-} from "#/entity/easyEntity/entityDefinition/entityDefTypes.ts";
+} from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 export { OrmException } from "#/ormException.ts";
 
 export { EasyOrm } from "#/orm.ts";
