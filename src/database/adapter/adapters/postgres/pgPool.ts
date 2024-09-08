@@ -12,7 +12,9 @@ import { raiseOrmException } from "#/ormException.ts";
 class PostgresPoolClient {
    locked: boolean;
    client: PostgresClient;
+   close: boolean;
    constructor(config: PgClientConfig) {
+      this.close = false;
       this.locked = false;
       this.client = new PostgresClient(config);
    }
@@ -90,10 +92,13 @@ export class PostgresPool {
    private returnClient(client: PostgresPoolClient) {
       client.locked = false;
    }
-
+   private replaceClient(client: PostgresPoolClient) {
+      client.client = new PostgresClient(this.clientConfig);
+   }
    async query<T>(query: string): Promise<QueryResponse<T>> {
       const client = await this.getClient();
       const result = await client.query<T>(query);
+
       this.returnClient(client);
       return result;
    }

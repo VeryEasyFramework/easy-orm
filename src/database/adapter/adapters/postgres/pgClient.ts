@@ -21,6 +21,7 @@ import {
 } from "#/database/adapter/adapters/postgres/maps/maps.ts";
 import { AUTH } from "#/database/adapter/adapters/postgres/pgAuth.ts";
 import { ScramClient } from "#/database/adapter/adapters/postgres/scram.ts";
+import { raiseOrmException } from "#/ormException.ts";
 
 export class PostgresClient {
    private conn!: Deno.Conn;
@@ -41,11 +42,7 @@ export class PostgresClient {
    get connected() {
       return this.status === "connected";
    }
-   async close() {
-      await this.reader.clearBuffer();
-      this.conn.close();
-      this.status = "notConnected";
-   }
+
    constructor(options: PgClientConfig) {
       if (!options.options) {
          options.options = {};
@@ -237,7 +234,7 @@ export class PostgresClient {
       }
    }
 
-   private async readError() {
+   private readError() {
       const errorFields: Record<string, any> = {};
       let offset = 0;
       while (this.reader.offset < this.reader.messageLength) {
@@ -258,8 +255,7 @@ export class PostgresClient {
       errorFields["name"] = pgErrorMap[
          errorFields["code"] as keyof typeof pgErrorMap
       ];
-      await this.reader.clearBuffer();
-      throw new PgError(errorFields);
+      return errorFields;
    }
    private parseRowDescription(): ColumnDescription[] {
       const columnCount = this.reader.readInt16();
@@ -299,6 +295,7 @@ export class PostgresClient {
       let status;
       const fields: ColumnDescription[] = [];
       const data: T[] = [];
+      const errors: any[] = [];
       let gotDescription = false;
       let rowCount = 0;
       while (!status) {
@@ -350,7 +347,8 @@ export class PostgresClient {
                break;
             }
             case QR_TYPE.ERROR_RESPONSE: {
-               await this.readError();
+               const error = this.readError();
+               errors.push(error);
                break;
             }
             case QR_TYPE.EMPTY_QUERY_RESPONSE: {
@@ -364,7 +362,6 @@ export class PostgresClient {
                const message = this.reader.readAllBytes();
                const messageType = this.reader.messageType;
                const messageString = this.decode(message);
-               await this.reader.clearBuffer();
                throw new PgError({
                   message:
                      `Unknown message type ${messageType}${messageString}`,
@@ -372,7 +369,9 @@ export class PostgresClient {
             }
          }
       }
-      await this.reader.clearBuffer();
+      if (errors.length) {
+         throw new PgError(errors[0]);
+      }
       const result: QueryResponse<T> = {
          rowCount: data.length,
          rows: data,
