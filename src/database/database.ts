@@ -11,12 +11,11 @@ import {
   type JSONConfig,
 } from "#/database/adapter/adapters/jsonAdapter.ts";
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
-import type { EasyField } from "#/entity/field/ormField.ts";
-import { EntityDefinition } from "#/entity/defineEntityTypes.ts";
-import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
+import type { EasyFieldType, SafeType } from "#/entity/field/fieldTypes.ts";
 import {
   DenoKvAdapter,
-  DenoKvConfig,
+  type DenoKvConfig,
 } from "#/database/adapter/adapters/denoKvAdapter.ts";
 
 export interface AdvancedFilter {
@@ -133,7 +132,7 @@ export class Database<
   async deleteRow(tableName: string, field: string, value: any): Promise<void> {
     await this.adapter.delete(tableName, field, value);
   }
-  async getRows<T>(
+  async getRows<T extends Record<string, SafeType>>(
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
@@ -145,7 +144,11 @@ export class Database<
     }
     return await this.adapter.getRows(tableName, options);
   }
-  async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
+  async getRow<T extends Record<string, SafeType>>(
+    tableName: string,
+    field: string,
+    value: any,
+  ): Promise<T> {
     return await this.adapter.getRow(tableName, field, value);
   }
 

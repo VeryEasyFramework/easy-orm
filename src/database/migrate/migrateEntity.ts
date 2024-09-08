@@ -1,8 +1,6 @@
 import type { Database, DatabaseConfig } from "#/database/database.ts";
-import type { EntityDefinition } from "#/entity/defineEntityTypes.ts";
-import type { EasyField } from "#/entity/field/ormField.ts";
-import { Orm } from "../../../mod.ts";
-import { raiseOrmException } from "#/ormException.ts";
+import type { EntityDefinition } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
+import type { EasyField } from "#/entity/field/easyField.ts";
 
 const idField: EasyField = {
   key: "id",
@@ -27,7 +25,7 @@ export async function migrateEntity(options: {
   const { database, entity } = options;
 
   const onOutput = options.onOutput || console.log;
-  const tableName = entity.tableName;
+  const tableName = entity.config.tableName;
   // Check if the table exists
   const tableExists = await database.adapter.tableExists(tableName);
 
