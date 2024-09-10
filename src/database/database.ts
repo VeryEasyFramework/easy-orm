@@ -31,12 +31,17 @@ export interface AdvancedFilter {
     | ">"
     | "<"
     | ">="
-    | "<=";
+    | "<="
+    | "="
+    | "!="
+    | "starts with"
+    | "ends with";
   value: any;
 }
 export interface ListOptions {
   columns?: string[];
   filter?: Record<string, string | number | AdvancedFilter>;
+  orFilter?: Record<string, string | number | AdvancedFilter>;
   limit?: number;
   offset?: number;
   orderBy?: string;
@@ -136,6 +141,7 @@ export class Database<
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
+    console.log(options);
     if (options?.filter) {
       const keys = Object.keys(options.filter);
       if (keys.length == 0) {

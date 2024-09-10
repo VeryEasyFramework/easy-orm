@@ -214,6 +214,7 @@ export class EasyOrm<
     entityId: string,
     options?: ListOptions,
   ): Promise<RowsResult<Record<string, SafeType>>> {
+    console.log(options);
     const entityDef = this.getEntityDef(entityId);
     if (!entityDef) {
       raiseOrmException(

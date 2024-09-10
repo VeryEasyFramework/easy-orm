@@ -1,4 +1,4 @@
-import type { ListOptions } from "#/database/database.ts";
+import type { AdvancedFilter, ListOptions } from "#/database/database.ts";
 import {
   type AdapterColumn,
   DatabaseAdapter,
@@ -9,7 +9,7 @@ import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
-import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import type { EasyFieldType, SafeType } from "#/entity/field/fieldTypes.ts";
 
 export interface PostgresConfig {
   clientOptions: PgClientConfig;
@@ -175,6 +175,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
     tableName = this.toSnake(tableName);
+    console.log(options);
     if (!options) {
       options = {} as ListOptions;
     }
@@ -186,17 +187,23 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     let query = `SELECT ${columns} FROM ${this.schema}.${tableName}`;
     let countQuery = `SELECT COUNT(*) FROM ${this.schema}.${tableName}`;
-
+    let andFilter = "";
+    let orFilter = "";
     if (options.filter) {
-      const keys = Object.keys(options.filter);
-      const filters = keys.map((key) => {
-        const value = options!.filter![key];
-        const filter = `${camelToSnakeCase(key)} = ${formatValue(value)}`;
-        return filter;
-      });
-      const filterQuery = ` WHERE ${filters.join(" AND ")}`;
-      query += filterQuery;
-      countQuery += filterQuery;
+      andFilter = this.makeAndFilter(options.filter);
+    }
+    if (options.orFilter) {
+      orFilter = this.makeOrFilter(options.orFilter);
+    }
+    if (andFilter && orFilter) {
+      query += ` WHERE ${andFilter} AND ${orFilter}`;
+      countQuery += ` WHERE ${andFilter} AND ${orFilter}`;
+    } else if (andFilter) {
+      query += ` WHERE ${andFilter}`;
+      countQuery += ` WHERE ${andFilter}`;
+    } else if (orFilter) {
+      query += ` WHERE ${orFilter}`;
+      countQuery += ` WHERE ${orFilter}`;
     }
 
     if (options.orderBy) {
@@ -212,7 +219,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     if (options.offset) {
       query += ` OFFSET ${options.offset}`;
     }
-
+    console.log(query);
     const result = await this.query<T>(query);
     result.totalCount = result.rowCount;
     if (options.limit) {
@@ -239,13 +246,64 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     return result.data[0];
   }
 
-  private makeFilter(filters: Record<string, any>): string {
-    return Object.entries(filters)
-      .map(([key, value]) => {
-        key = camelToSnakeCase(key);
-        return `${key} = ${formatValue(value)}`;
-      })
-      .join(" AND ");
+  private makeFilter(
+    filters: Record<string, SafeType | AdvancedFilter>,
+  ): string[] {
+    const keys = Object.keys(filters);
+    if (keys.length === 0) {
+      return [];
+    }
+
+    const filterStrings = keys.map((key) => {
+      let filterString = "";
+      if (typeof filters[key] === "object") {
+        const filter = filters[key] as AdvancedFilter;
+        const operator = filter.op;
+        switch (operator) {
+          case "=":
+            filterString = `${camelToSnakeCase(key)} = ${
+              formatValue(filter.value)
+            }`;
+            break;
+          case "contains":
+            filterString = `${camelToSnakeCase(key)} LIKE '%${filter.value}%'`;
+            break;
+          case "starts with":
+            filterString = `${camelToSnakeCase(key)} LIKE '${filter.value}%'`;
+            break;
+          case "ends with":
+            filterString = `${camelToSnakeCase(key)} LIKE '%${filter.value}'`;
+            break;
+          case "not contains":
+            filterString = `${
+              camelToSnakeCase(key)
+            } NOT LIKE '%${filter.value}%'`;
+            break;
+          case "!=":
+            filterString = `${camelToSnakeCase(key)} != ${
+              formatValue(filter.value)
+            }`;
+            break;
+        }
+        return filterString;
+      }
+      return `${camelToSnakeCase(key)} = ${formatValue(filters[key])}`;
+    });
+
+    return filterStrings;
+  }
+
+  private makeOrFilter(
+    filters: Record<string, SafeType | AdvancedFilter>,
+  ) {
+    const filterStrings = this.makeFilter(filters);
+    return filterStrings.join(" OR ");
+  }
+  private makeAndFilter(
+    filters: Record<string, SafeType | AdvancedFilter>,
+  ) {
+    const filterStrings = this.makeFilter(filters);
+    return filterStrings.join(" AND ");
   }
   async batchUpdateField(
     tableName: string,
