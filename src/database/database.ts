@@ -141,7 +141,6 @@ export class Database<
     tableName: string,
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
-    console.log(options);
     if (options?.filter) {
       const keys = Object.keys(options.filter);
       if (keys.length == 0) {

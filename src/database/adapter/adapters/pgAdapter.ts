@@ -175,7 +175,6 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     options?: ListOptions,
   ): Promise<RowsResult<T>> {
     tableName = this.toSnake(tableName);
-    console.log(options);
     if (!options) {
       options = {} as ListOptions;
     }
@@ -219,7 +218,6 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     if (options.offset) {
       query += ` OFFSET ${options.offset}`;
     }
-    console.log(query);
     const result = await this.query<T>(query);
     result.totalCount = result.rowCount;
     if (options.limit) {
