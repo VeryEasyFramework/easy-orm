@@ -10,6 +10,7 @@ import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgType
 import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 import type { EasyFieldType, SafeType } from "#/entity/field/fieldTypes.ts";
+import { raiseOrmException } from "#/ormException.ts";
 
 export interface PostgresConfig {
   clientOptions: PgClientConfig;
@@ -133,12 +134,13 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
   async delete(tableName: string, field: string, value: any): Promise<void> {
     tableName = this.toSnake(tableName);
-    const query =
-      `DELETE FROM ${this.schema}.${tableName} WHERE ${field} = ${value}`;
+    const query = `DELETE FROM ${this.schema}.${tableName} WHERE ${
+      this.formatColumnName(field)
+    } = ${formatValue(value)}`;
     await this.query(query);
   }
   private getColumns(data: Record<string, any>): string[] {
-    return Object.keys(data).map((key) => camelToSnakeCase(key));
+    return Object.keys(data).map((key) => this.formatColumnName(key));
   }
   private getValues(data: Record<string, any>): string[] {
     const values = Object.values(data);
@@ -181,7 +183,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     let columns = "*";
     if (options.columns) {
       columns = options.columns.map((column) => {
-        return camelToSnakeCase(column);
+        return this.formatColumnName(column);
       }).join(", ");
     }
     let query = `SELECT ${columns} FROM ${this.schema}.${tableName}`;
@@ -206,7 +208,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
 
     if (options.orderBy) {
-      query += ` ORDER BY ${camelToSnakeCase(options.orderBy)}`;
+      query += ` ORDER BY ${this.formatColumnName(options.orderBy)}`;
       const order = options.order || "ASC";
       query += ` ${order}`;
     }
@@ -227,19 +229,29 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
     return result;
   }
+
+  private formatColumnName(column: string): string {
+    column = camelToSnakeCase(column);
+    const reservedWords = ["order", "user"];
+    if (reservedWords.includes(column)) {
+      return `"${column}"`;
+    }
+    return column;
+  }
   async getRow<T>(tableName: string, field: string, value: any): Promise<T> {
     tableName = this.toSnake(tableName);
     if (this.camelCase) {
-      field = camelToSnakeCase(field);
+      field = this.formatColumnName(field);
     }
     value = formatValue(value);
     const query =
       `SELECT * FROM ${this.schema}.${tableName} WHERE ${field} = ${value}`;
     const result = await this.query<T>(query);
     if (result.rowCount === 0) {
-      throw new PgError({
-        message: `No row found in ${tableName} where ${field} = ${value}`,
-      });
+      raiseOrmException(
+        "EntityNotFound",
+        `No row found with ${field} = ${value} for table ${tableName}`,
+      );
     }
     return result.data[0];
   }
