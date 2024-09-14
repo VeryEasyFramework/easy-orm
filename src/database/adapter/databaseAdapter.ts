@@ -64,6 +64,12 @@ export abstract class DatabaseAdapter<C> {
 
   abstract getRow<T>(tableName: string, field: string, value: any): Promise<T>;
 
+  abstract getValue<T>(
+    tableName: string,
+    id: string,
+    field: string,
+  ): Promise<T>;
+
   abstract batchUpdateField(
     tableName: string,
     field: string,

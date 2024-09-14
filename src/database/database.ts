@@ -157,6 +157,14 @@ export class Database<
     return await this.adapter.getRow(tableName, field, value);
   }
 
+  async getValue<SafeType>(
+    tableName: string,
+    id: string,
+    field: string,
+  ): Promise<SafeType> {
+    return await this.adapter.getValue(tableName, id, field);
+  }
+
   async batchUpdateField(
     tableName: string,
     field: string,

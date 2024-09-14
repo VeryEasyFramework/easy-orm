@@ -255,7 +255,24 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     }
     return result.data[0];
   }
-
+  async getValue<T>(
+    tableName: string,
+    id: string,
+    field: string,
+  ): Promise<T> {
+    tableName = this.toSnake(tableName);
+    const query = `SELECT ${
+      this.formatColumnName(field)
+    } FROM ${this.schema}.${tableName} WHERE id = ${formatValue(id)}`;
+    const result = await this.query<Record<string, T>>(query);
+    if (result.rowCount === 0) {
+      raiseOrmException(
+        "EntityNotFound",
+        `No row found with id = ${id} for table ${tableName}`,
+      );
+    }
+    return result.data[0][field];
+  }
   private makeFilter(
     filters: Record<string, SafeType | AdvancedFilter>,
   ): string[] {
