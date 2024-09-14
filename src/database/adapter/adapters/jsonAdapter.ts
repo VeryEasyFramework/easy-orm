@@ -12,6 +12,9 @@ export interface JSONConfig {
   dataPath: string;
 }
 export class JSONAdapter extends DatabaseAdapter<JSONConfig> {
+  getValue<T>(tableName: string, id: string, field: string): Promise<T> {
+    throw new Error("Method not implemented.");
+  }
   getTableColumns(tableName: string): Promise<AdapterColumn[]> {
     throw new Error("Method not implemented.");
   }

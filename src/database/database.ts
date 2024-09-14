@@ -1,15 +1,8 @@
 import {
-  MemcachedAdapter,
-  type MemcachedConfig,
-} from "#/database/adapter/adapters/memcachedAdapter.ts";
-import {
   PostgresAdapter,
   type PostgresConfig,
 } from "#/database/adapter/adapters/pgAdapter.ts";
-import {
-  JSONAdapter,
-  type JSONConfig,
-} from "#/database/adapter/adapters/jsonAdapter.ts";
+
 import type { DatabaseAdapter, RowsResult } from "./adapter/databaseAdapter.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 import type { EasyFieldType, SafeType } from "#/entity/field/fieldTypes.ts";
@@ -49,8 +42,6 @@ export interface ListOptions {
 }
 export interface DatabaseConfig {
   postgres: PostgresConfig;
-  memcached: MemcachedConfig;
-  json: JSONConfig;
   denoKv: DenoKvConfig;
 }
 
@@ -58,8 +49,7 @@ export type DBType = keyof DatabaseConfig;
 
 export interface AdapterMap {
   "postgres": PostgresAdapter;
-  "memcached": MemcachedAdapter;
-  "json": JSONAdapter;
+
   "denoKv": DenoKvAdapter;
 }
 
@@ -86,12 +76,7 @@ export class Database<
       case "postgres":
         this.adapter = new PostgresAdapter(options.config as PostgresConfig);
         break;
-      case "memcached":
-        this.adapter = new MemcachedAdapter(options.config as MemcachedConfig);
-        break;
-      case "json":
-        this.adapter = new JSONAdapter(options.config as JSONConfig);
-        break;
+
       case "denoKv":
         this.adapter = new DenoKvAdapter(options.config as DenoKvConfig);
         break;

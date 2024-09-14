@@ -237,7 +237,7 @@ export class EasyOrm<
   async findEntity(
     entityId: string,
     filter: Required<ListOptions["filter"]>,
-  ) {
+  ): Promise<EntityRecord | null> {
     const entityDef = this.getEntityDef(entityId);
     const result = await this.database.getRows<Record<string, SafeType>>(
       entityDef.config.tableName,
@@ -256,7 +256,7 @@ export class EasyOrm<
   async countEntities(entityId: string, options?: {
     filter: ListOptions["filter"];
     orFilter?: ListOptions["orFilter"];
-  }) {
+  }): Promise<number> {
     const entityDef = this.getEntityDef(entityId);
     const result = await this.database.getRows(entityDef.config.tableName, {
       filter: options?.filter,

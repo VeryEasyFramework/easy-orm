@@ -16,6 +16,9 @@ export interface MemcachedConfig extends PoolConfig {
 }
 
 export class MemcachedAdapter extends DatabaseAdapter<MemcachedConfig> {
+  getValue<T>(tableName: string, id: string, field: string): Promise<T> {
+    throw new Error("Method not implemented.");
+  }
   getTableColumns(tableName: string): Promise<AdapterColumn[]> {
     throw new Error("Method not implemented.");
   }
