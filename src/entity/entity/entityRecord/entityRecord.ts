@@ -69,7 +69,14 @@ export class EntityRecord implements EntityRecord {
     this._data.updatedAt = value;
   }
   get data(): Record<string, SafeType> {
-    return this._data;
+    const keys = this.entityDefinition.fields.filter((field) => field.hidden)
+      .map((field) => field.key);
+    const data = { ...this._data };
+    for (const key of keys) {
+      delete data[key];
+    }
+
+    return data;
   }
   entityDefinition!: EntityDefinition;
 
@@ -132,6 +139,7 @@ export class EntityRecord implements EntityRecord {
   }
   async save() {
     await this.validate(this._data);
+    await this.getFetchedFields();
     if (this._isNew) {
       await this.beforeInsert();
       await this.beforeSave();
@@ -175,10 +183,10 @@ export class EntityRecord implements EntityRecord {
     await this.validate(mergedData);
   }
 
-  async runAction(
+  async runAction<R = void>(
     actionKey: string,
     data?: Record<string, SafeType>,
-  ): Promise<void | SafeType> {
+  ): Promise<R> {
     const action = this.actions[actionKey];
     if (!action) {
       raiseOrmException(
@@ -196,7 +204,7 @@ export class EntityRecord implements EntityRecord {
         }
       }
     }
-    return await action.action(this, data);
+    return await action.action(this, data) as R;
   }
   /**
    * Base fields
@@ -316,6 +324,23 @@ export class EntityRecord implements EntityRecord {
           },
         );
       }
+    }
+  }
+
+  private async getFetchedFields() {
+    const fields = this.entityDefinition.fields.filter((field) =>
+      field.fetchOptions
+    );
+    for (const field of fields) {
+      //  field.fetchOptions!.thisIdKey
+      const { fetchEntity, thatFieldKey, thisFieldKey, thisIdKey } = field
+        .fetchOptions!;
+      const value = await this.orm.getValue(
+        fetchEntity,
+        this._data[thisIdKey],
+        thatFieldKey,
+      );
+      this._data[thisFieldKey] = value;
     }
   }
   /**

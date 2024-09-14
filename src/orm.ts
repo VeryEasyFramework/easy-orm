@@ -215,12 +215,7 @@ export class EasyOrm<
     options?: ListOptions,
   ): Promise<RowsResult<Record<string, SafeType>>> {
     const entityDef = this.getEntityDef(entityId);
-    if (!entityDef) {
-      raiseOrmException(
-        "EntityNotFound",
-        `Entity '${entityId}' is not a registered entity!`,
-      );
-    }
+
     options = options || {};
     if (!options.columns) {
       options.columns = entityDef.listFields as string[];
@@ -236,6 +231,55 @@ export class EasyOrm<
     return result;
   }
 
+  /**
+   * Find an entity by a filter. Returns the first entity that matches the filter
+   */
+  async findEntity(
+    entityId: string,
+    filter: Required<ListOptions["filter"]>,
+  ): Promise<EntityRecord | null> {
+    const entityDef = this.getEntityDef(entityId);
+    const result = await this.database.getRows<Record<string, SafeType>>(
+      entityDef.config.tableName,
+      {
+        filter,
+        columns: ["id"],
+      },
+    );
+    if (result.rowCount === 0) {
+      return null;
+    }
+    const id = result.data[0].id as string;
+    return await this.getEntity(entityId, id);
+  }
+
+  async countEntities(entityId: string, options?: {
+    filter: ListOptions["filter"];
+    orFilter?: ListOptions["orFilter"];
+  }): Promise<number> {
+    const entityDef = this.getEntityDef(entityId);
+    const result = await this.database.getRows(entityDef.config.tableName, {
+      filter: options?.filter,
+      orFilter: options?.orFilter,
+      columns: ["id"],
+    });
+
+    return result.totalCount;
+  }
+
+  async getValue<T = SafeType>(
+    entityId: string,
+    id: string,
+    field: string,
+  ): Promise<T> {
+    const entityDef = this.getEntityDef(entityId);
+    const result = await this.database.getValue<T>(
+      entityDef.config.tableName,
+      id,
+      field,
+    );
+    return result;
+  }
   async batchUpdateField(
     entityId: string,
     field: string,

@@ -13,6 +13,9 @@ export interface DenoKvConfig {
   path?: string;
 }
 export class DenoKvAdapter extends DatabaseAdapter<DenoKvConfig> {
+  getValue<T>(tableName: string, id: string, field: string): Promise<T> {
+    throw new Error("Method not implemented.");
+  }
   kv!: Deno.Kv;
 
   async init(): Promise<void> {

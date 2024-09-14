@@ -1,6 +1,6 @@
 {
   "name": "@vef/easy-orm",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "exports": "./mod.ts",
   "publish": {
     "exclude": [
@@ -15,7 +15,7 @@
   },
   "imports": {
     "#/": "./src/",
-    "@vef/easy-cli": "jsr:@vef/easy-cli@^0.2.2",
+    "@vef/easy-cli": "jsr:@vef/easy-cli@^0.2.3",
     "@vef/string-utils": "jsr:@vef/string-utils@^0.1.5"
   }
 }
