@@ -283,38 +283,33 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
     const filterStrings = keys.map((key) => {
       let filterString = "";
+      const column = this.formatColumnName(key);
       if (typeof filters[key] === "object") {
         const filter = filters[key] as AdvancedFilter;
         const operator = filter.op;
         switch (operator) {
           case "=":
-            filterString = `${camelToSnakeCase(key)} = ${
-              formatValue(filter.value)
-            }`;
+            filterString = `${column} = ${formatValue(filter.value)}`;
             break;
           case "contains":
-            filterString = `${camelToSnakeCase(key)} LIKE '%${filter.value}%'`;
+            filterString = `${column} ILIKE '%${filter.value}%'`;
             break;
           case "starts with":
-            filterString = `${camelToSnakeCase(key)} LIKE '${filter.value}%'`;
+            filterString = `${column} ILIKE '${filter.value}%'`;
             break;
           case "ends with":
-            filterString = `${camelToSnakeCase(key)} LIKE '%${filter.value}'`;
+            filterString = `${column} ILIKE '%${filter.value}'`;
             break;
           case "not contains":
-            filterString = `${
-              camelToSnakeCase(key)
-            } NOT LIKE '%${filter.value}%'`;
+            filterString = `${column} NOT ILIKE '%${filter.value}%'`;
             break;
           case "!=":
-            filterString = `${camelToSnakeCase(key)} != ${
-              formatValue(filter.value)
-            }`;
+            filterString = `${column} != ${formatValue(filter.value)}`;
             break;
         }
         return filterString;
       }
-      return `${camelToSnakeCase(key)} = ${formatValue(filters[key])}`;
+      return `${column} = ${formatValue(filters[key])}`;
     });
 
     return filterStrings;

@@ -9,6 +9,15 @@ import type {
 interface Choice {
   key: string;
   label: string;
+  color?:
+    | "primary"
+    | "secondary"
+    | "accent"
+    | "info"
+    | "success"
+    | "warning"
+    | "error"
+    | "muted";
 }
 
 /**
