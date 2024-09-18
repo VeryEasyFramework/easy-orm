@@ -284,27 +284,84 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const filterStrings = keys.map((key) => {
       let filterString = "";
       const column = this.formatColumnName(key);
+
       if (typeof filters[key] === "object") {
         const filter = filters[key] as AdvancedFilter;
+        const value = formatValue(filter.value);
         const operator = filter.op;
         switch (operator) {
           case "=":
-            filterString = `${column} = ${formatValue(filter.value)}`;
+            filterString = `${column} = ${value}`;
             break;
+          case "!=":
+            filterString = `${column} != ${value}`;
+            break;
+          case ">":
+            filterString = `${column} > ${value}`;
+            break;
+          case "<":
+            filterString = `${column} < ${value}`;
+            break;
+          case ">=":
+            filterString = `${column} >= ${value}`;
+            break;
+          case "<=":
+            filterString = `${column} <= ${value}`;
+            break;
+          case "is":
+            filterString = `${column} IS ${value}`;
+            break;
+          case "isNot":
+            filterString = `${column} IS NOT ${value}`;
+            break;
+
           case "contains":
             filterString = `${column} ILIKE '%${filter.value}%'`;
             break;
-          case "starts with":
-            filterString = `${column} ILIKE '${filter.value}%'`;
-            break;
-          case "ends with":
-            filterString = `${column} ILIKE '%${filter.value}'`;
-            break;
-          case "not contains":
+          case "notContains":
             filterString = `${column} NOT ILIKE '%${filter.value}%'`;
             break;
-          case "!=":
-            filterString = `${column} != ${formatValue(filter.value)}`;
+          case "startsWith":
+            filterString = `${column} ILIKE '${filter.value}%'`;
+            break;
+          case "endsWith":
+            filterString = `${column} ILIKE '%${filter.value}'`;
+            break;
+          case "isEmpty":
+            filterString = `${column} IS NULL`;
+            break;
+          case "isNotEmpty":
+            filterString = `${column} IS NOT NULL`;
+            break;
+          case "inList":
+            filterString = `${column} IN (${value})`;
+            break;
+          case "notInList":
+            filterString = `${column} NOT IN (${value})`;
+            break;
+          case "equal":
+            filterString = `${column} = ${value}`;
+            break;
+          case "greaterThan":
+            filterString = `${column} > ${value}`;
+            break;
+          case "lessThan":
+            filterString = `${column} < ${value}`;
+            break;
+          case "greaterThanOrEqual":
+            filterString = `${column} >= ${value}`;
+            break;
+          case "lessThanOrEqual":
+            filterString = `${column} <= ${value}`;
+            break;
+          case "between":
+            filterString = `${column} BETWEEN ${value[0]} AND ${value[1]}`;
+            break;
+          case "notBetween":
+            filterString = `${column} NOT BETWEEN ${value[0]} AND ${value[1]}`;
+            break;
+          default:
+            filterString = `${column} = ${value}`;
             break;
         }
         return filterString;
@@ -474,6 +531,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 }
 
 function formatValue(value: any): string {
+  if (Array.isArray(value)) {
+    return value.map((v) => formatValue(v)).join(", ");
+  }
   if (typeof value === "string") {
     // check if there's already a single quote
     if (value.includes("'")) {
