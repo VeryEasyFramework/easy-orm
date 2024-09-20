@@ -19,11 +19,45 @@ export interface FieldGroup {
   fields: Array<EasyField>;
 }
 
+interface IdMethod {
+  type: "number" | "uuid" | "hash" | "series" | "data";
+}
+
+interface NumberMethod extends IdMethod {
+  type: "number";
+  autoIncrement: boolean;
+}
+
+interface UuidMethod extends IdMethod {
+  type: "uuid";
+}
+
+interface HashMethod extends IdMethod {
+  type: "hash";
+  hashLength: number;
+}
+
+interface SeriesMethod extends IdMethod {
+  type: "series";
+}
+
+interface DataMethod extends IdMethod {
+  type: "data";
+}
+
+export type IdMethodType =
+  | NumberMethod
+  | UuidMethod
+  | HashMethod
+  | DataMethod
+  | SeriesMethod;
 export interface EasyEntityConfig {
   label: string;
   description: string;
   titleField?: string;
   tableName: string;
+  idMethod: NumberMethod | UuidMethod | HashMethod | SeriesMethod | DataMethod;
+
   orderField?: string;
   orderDirection?: "asc" | "desc";
 }

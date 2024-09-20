@@ -7,10 +7,10 @@ import {
 import { camelToSnakeCase, toCamelCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
-import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 import type { EasyFieldType, SafeType } from "#/entity/field/fieldTypes.ts";
 import { raiseOrmException } from "#/ormException.ts";
+import { IdMethodType } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 
 export interface PostgresConfig {
   clientOptions: PgClientConfig;
@@ -101,11 +101,38 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const result = await this.query<{ tableName: string }>(query);
     return result.rowCount > 0;
   }
-  async createTable(tableName: string, idField: EasyField): Promise<void> {
+  async createTable(
+    tableName: string,
+    idField: EasyField,
+    idMethod: IdMethodType,
+  ): Promise<void> {
     tableName = this.toSnake(tableName);
-    const columnName = camelToSnakeCase(idField.key as string);
-
-    const columnType = this.getColumnType(idField);
+    const columnName = this.formatColumnName(idField.key as string);
+    let columnType = "";
+    switch (idMethod.type) {
+      case "number":
+        if (idMethod.autoIncrement) {
+          columnType = "SERIAL";
+        } else {
+          columnType = "INTEGER";
+        }
+        break;
+      case "hash":
+        columnType = `VARCHAR(${idMethod.hashLength})`;
+        break;
+      case "uuid":
+        columnType = "UUID";
+        break;
+      case "series":
+        columnType = "SERIAL";
+        break;
+      case "data":
+        columnType = "VARCHAR(255)";
+        break;
+      default:
+        columnType = "VARCHAR(255)";
+        break;
+    }
 
     const query =
       `CREATE TABLE IF NOT EXISTS ${this.schema}.${tableName} (${columnName} ${columnType} PRIMARY KEY)`;

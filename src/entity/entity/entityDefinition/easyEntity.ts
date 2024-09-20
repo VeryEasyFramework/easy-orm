@@ -21,7 +21,7 @@ export class EasyEntity {
   readonly fields: Array<EasyField>;
   readonly fieldGroups: Array<FieldGroupDefinition>;
 
-  readonly config: EasyEntityConfig;
+  config: EasyEntityConfig;
 
   readonly actions: Array<EntityAction>;
 
@@ -54,12 +54,17 @@ export class EasyEntity {
       label: options?.label || camelToTitleCase(this.entityId),
       description: options?.description || "",
       tableName: camelToSnakeCase(this.entityId),
+      idMethod: {
+        type: "hash",
+        hashLength: 16,
+      },
     };
   }
   setConfig(config: Partial<EasyEntityConfig>) {
-    Object.entries(config).forEach(([key, value]) => {
-      this.config[key as keyof EasyEntityConfig] = value as any;
-    });
+    this.config = {
+      ...this.config,
+      ...config,
+    };
   }
 
   addField(field: EasyField) {

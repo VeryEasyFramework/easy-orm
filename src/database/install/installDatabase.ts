@@ -32,6 +32,8 @@ async function createSettingsTable(database: Database<any>) {
     key: "id",
     fieldType: "DataField",
     primaryKey: true,
+  }, {
+    type: "data",
   });
 
   for (const field of fields) {

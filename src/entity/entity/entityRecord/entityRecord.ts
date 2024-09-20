@@ -220,14 +220,47 @@ export class EntityRecord implements EntityRecord {
     this.updatedAt = dateUtils.nowTimestamp();
   }
 
-  private setIdIfNew() {
+  private async setIdIfNew() {
     if (!this.id) {
+      const method = this.entityDefinition.config.idMethod;
+      let id: string | number | null;
+      switch (method.type) {
+        case "hash":
+          id = generateId(method.hashLength);
+          break;
+        case "number": {
+          const result = await this.orm.database.getRows(
+            this.entityDefinition.config.tableName,
+            {
+              orderBy: "id",
+              order: "desc",
+              limit: 1,
+              columns: ["id"],
+            },
+          );
+          if (result.rowCount > 0) {
+            id = result.data[0].id as number + 1;
+            break;
+          }
+          id = 1;
+          break;
+        }
+        case "uuid":
+          id = crypto.randomUUID();
+          break;
+        case "series":
+          id = null;
+          break;
+        case "data":
+          id = null;
+          break;
+      }
       this._isNew = true;
       if (this.primaryKey) {
-        this._data[this.primaryKey] = generateId();
+        this._data[this.primaryKey] = id;
         return;
       }
-      this._data.id = generateId();
+      this._data.id = id;
     }
   }
   private parseDatabaseRow(row: Record<string, any>) {

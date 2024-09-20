@@ -4,125 +4,147 @@ import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
 import { raiseOrmException } from "#/ormException.ts";
 import type { EasyEntity } from "./easyEntity.ts";
 import type { EasyOrm } from "#/orm.ts";
+import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
 
 export function buildEasyEntity(
-   orm: EasyOrm,
-   easyEntity: EasyEntity,
+  orm: EasyOrm,
+  easyEntity: EasyEntity,
 ): EntityDefinition {
-   buildConnectionTitleFields(orm, easyEntity);
-   const groups: FieldGroup[] = buildFieldGroups(easyEntity);
-   const listFields = buildListFields(easyEntity);
+  buildConnectionFields(orm, easyEntity);
+  const groups: FieldGroup[] = buildFieldGroups(easyEntity);
+  const listFields = buildListFields(easyEntity);
 
-   return {
-      entityId: easyEntity.entityId,
-      fields: easyEntity.fields,
-      fieldGroups: groups,
-      listFields: listFields,
-      config: easyEntity.config,
-      hooks: easyEntity.hooks,
-      actions: easyEntity.actions,
-   };
+  return {
+    entityId: easyEntity.entityId,
+    fields: easyEntity.fields,
+    fieldGroups: groups,
+    listFields: listFields,
+    config: easyEntity.config,
+    hooks: easyEntity.hooks,
+    actions: easyEntity.actions,
+  };
 }
 
-function buildConnectionTitleFields(orm: EasyOrm, easyEntity: EasyEntity) {
-   const fields = easyEntity.fields.filter((field) =>
-      field.fieldType === "ConnectionField"
-   );
-   for (const field of fields) {
-      const titleField = buildConnectionTitleField(orm, field);
-      if (!titleField) {
-         continue;
-      }
+function buildConnectionFields(orm: EasyOrm, easyEntity: EasyEntity) {
+  const fields = easyEntity.fields.filter((field) =>
+    field.fieldType === "ConnectionField"
+  );
+  for (const field of fields) {
+    const titleField = buildConnectionTitleField(orm, field);
+    if (!titleField) {
+      continue;
+    }
 
-      field.connectionTitleField = titleField.key as string;
-      easyEntity.fields.push(titleField);
-   }
+    field.connectionTitleField = titleField.key as string;
+    field.connectionIdType = getConnectionIdType(orm, field.connectionEntity!);
+    easyEntity.fields.push(titleField);
+  }
+}
+
+function getConnectionIdType(
+  orm: EasyOrm,
+  connectionEntity: string,
+): EasyFieldType {
+  const entity = orm.getEasyEntityDef(connectionEntity);
+  switch (entity.config.idMethod.type) {
+    case "hash":
+      return "DataField";
+    case "number":
+      return "IntField";
+    case "uuid":
+      return "DataField";
+    case "series":
+      return "IntField";
+    case "data":
+      return "DataField";
+  }
 }
 
 function buildConnectionTitleField(
-   orm: EasyOrm,
-   field: EasyField,
+  orm: EasyOrm,
+  field: EasyField,
 ) {
-   if (!field.connectionEntity) {
-      return;
-   }
-   const entity = orm.getEasyEntityDef(field.connectionEntity);
-   const titleFieldKey = entity.config.titleField;
-   if (!titleFieldKey) {
-      return;
-   }
+  if (!field.connectionEntity) {
+    return;
+  }
+  const entity = orm.getEasyEntityDef(field.connectionEntity);
+  const titleFieldKey = entity.config.titleField;
+  if (!titleFieldKey) {
+    return;
+  }
 
-   const entityTitleField = entity.fields.find((field) =>
-      field.key === titleFieldKey
-   );
-   if (!entityTitleField) {
-      return;
-   }
-   const newKey = `${field.key as string}${
-      toPascalCase(camelToSnakeCase(titleFieldKey))
-   }`;
+  const entityTitleField = entity.fields.find((field) =>
+    field.key === titleFieldKey
+  );
+  if (!entityTitleField) {
+    return;
+  }
+  const newKey = `${field.key as string}${
+    toPascalCase(camelToSnakeCase(titleFieldKey))
+  }`;
 
-   const titleField = { ...entityTitleField };
-   titleField.readOnly = true;
-   titleField.inList = field.inList;
-   titleField.group = field.group;
-   titleField.fetchOptions = {
-      fetchEntity: field.connectionEntity,
-      thisIdKey: field.key,
-      thisFieldKey: newKey,
-      thatFieldKey: titleField.key,
-   };
-   titleField.key = newKey;
+  const titleField = { ...entityTitleField };
+  titleField.readOnly = true;
+  titleField.inList = field.inList;
+  titleField.group = field.group;
+  titleField.fetchOptions = {
+    fetchEntity: field.connectionEntity,
+    thisIdKey: field.key,
+    thisFieldKey: newKey,
+    thatFieldKey: titleField.key,
+  };
+  titleField.key = newKey;
 
-   return titleField;
+  return titleField;
 }
-function buildListFields(easyEntity: EasyEntity) {
-   const listFields: Array<string> = [];
 
-   if (easyEntity.config.titleField) {
-      const titleField = easyEntity.fields.find((field) =>
-         field.key === easyEntity.config.titleField
-      );
-      if (titleField) {
-         titleField.inList = true;
-      }
-   }
-   for (const field of easyEntity.fields) {
-      if (field.inList) {
-         listFields.push(field.key);
-      }
-   }
-   listFields.push("createdAt");
-   listFields.push("updatedAt");
-   listFields.push("id");
-   return listFields;
+function buildListFields(easyEntity: EasyEntity) {
+  const listFields: Array<string> = [];
+
+  if (easyEntity.config.titleField) {
+    const titleField = easyEntity.fields.find((field) =>
+      field.key === easyEntity.config.titleField
+    );
+    if (titleField) {
+      titleField.inList = true;
+    }
+  }
+  for (const field of easyEntity.fields) {
+    if (field.inList) {
+      listFields.push(field.key);
+    }
+  }
+  listFields.push("createdAt");
+  listFields.push("updatedAt");
+  listFields.push("id");
+  return listFields;
 }
 
 function buildFieldGroups(easyEntity: EasyEntity): FieldGroup[] {
-   const groups: Record<string, FieldGroup> = {
-      default: {
-         key: "default",
-         title: "Default",
-         fields: [],
-      },
-   };
-   const groupKeys = easyEntity.fieldGroups.map((group) => group.key);
-   easyEntity.fieldGroups.forEach((group) => {
-      groups[group.key] = {
-         ...group,
-         fields: [],
-      };
-   });
+  const groups: Record<string, FieldGroup> = {
+    default: {
+      key: "default",
+      title: "Default",
+      fields: [],
+    },
+  };
+  const groupKeys = easyEntity.fieldGroups.map((group) => group.key);
+  easyEntity.fieldGroups.forEach((group) => {
+    groups[group.key] = {
+      ...group,
+      fields: [],
+    };
+  });
 
-   for (const field of easyEntity.fields) {
-      const groupKey = field.group || "default";
-      if (!groupKeys.includes(groupKey)) {
-         raiseOrmException(
-            "InvalidFieldGroup",
-            `Field group ${groupKey} in field ${field.key} does not exist in ${easyEntity.entityId} entity`,
-         );
-      }
-      groups[groupKey].fields.push(field);
-   }
-   return Object.values(groups);
+  for (const field of easyEntity.fields) {
+    const groupKey = field.group || "default";
+    if (!groupKeys.includes(groupKey)) {
+      raiseOrmException(
+        "InvalidFieldGroup",
+        `Field group ${groupKey} in field ${field.key} does not exist in ${easyEntity.entityId} entity`,
+      );
+    }
+    groups[groupKey].fields.push(field);
+  }
+  return Object.values(groups);
 }

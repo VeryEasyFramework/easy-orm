@@ -69,16 +69,12 @@ export class Database<
   adapter: DatabaseAdapter<DatabaseConfig[keyof DatabaseConfig]>;
 
   private config: DatabaseConfig[A];
-  idFieldType: EasyFieldType = "IDField";
   constructor(options: {
     adapter: A;
     config: DatabaseConfig[A];
     idFieldType?: EasyFieldType;
   }) {
     this.config = options.config;
-    if (options.idFieldType) {
-      this.idFieldType = options.idFieldType;
-    }
     switch (options.adapter) {
       case "postgres":
         this.adapter = new PostgresAdapter(options.config as PostgresConfig);
