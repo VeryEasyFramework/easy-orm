@@ -90,6 +90,8 @@ export class EntityRecord implements EntityRecord {
 
   _validate!: Array<HookFunction>;
 
+  _beforeValidate!: Array<HookFunction>;
+
   actions!: Record<string, EntityAction>;
 
   async beforeInsert() {
@@ -122,6 +124,9 @@ export class EntityRecord implements EntityRecord {
     data = await this.validateConnections(data);
 
     this._data = data;
+    for (const hook of this._beforeValidate) {
+      await hook(this);
+    }
     this.setIdIfNew();
     for (const hook of this._validate) {
       await hook(this);
@@ -253,6 +258,15 @@ export class EntityRecord implements EntityRecord {
           break;
         case "data":
           id = null;
+          break;
+        case "field":
+          if (!method.field) {
+            raiseOrmException(
+              "InvalidField",
+              "Field method requires a field name",
+            );
+          }
+          id = this._data[method.field];
           break;
       }
       this._isNew = true;

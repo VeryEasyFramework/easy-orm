@@ -5,12 +5,14 @@ import { raiseOrmException } from "#/ormException.ts";
 import type { EasyEntity } from "./easyEntity.ts";
 import type { EasyOrm } from "#/orm.ts";
 import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import { EntityChildDefinition } from "#/entity/child/childEntity.ts";
 
 export function buildEasyEntity(
   orm: EasyOrm,
   easyEntity: EasyEntity,
 ): EntityDefinition {
   buildConnectionFields(orm, easyEntity);
+  buildChildEntities(orm, easyEntity);
   const groups: FieldGroup[] = buildFieldGroups(easyEntity);
   const listFields = buildListFields(easyEntity);
 
@@ -18,6 +20,7 @@ export function buildEasyEntity(
     entityId: easyEntity.entityId,
     fields: easyEntity.fields,
     fieldGroups: groups,
+    children: easyEntity.children,
     listFields: listFields,
     config: easyEntity.config,
     hooks: easyEntity.hooks,
@@ -29,6 +32,7 @@ function buildConnectionFields(orm: EasyOrm, easyEntity: EasyEntity) {
   const fields = easyEntity.fields.filter((field) =>
     field.fieldType === "ConnectionField"
   );
+
   for (const field of fields) {
     const titleField = buildConnectionTitleField(orm, field);
     if (!titleField) {
@@ -41,6 +45,27 @@ function buildConnectionFields(orm: EasyOrm, easyEntity: EasyEntity) {
   }
 }
 
+function buildChildEntities(orm: EasyOrm, easyEntity: EasyEntity) {
+  for (const child of easyEntity.children) {
+    buildChild(orm, child);
+  }
+}
+
+function buildChild(orm: EasyOrm, child: EntityChildDefinition) {
+  const connectionFields = child.fields.filter((field) =>
+    field.fieldType === "ConnectionField"
+  );
+  for (const field of connectionFields) {
+    const titleField = buildConnectionTitleField(orm, field);
+    if (!titleField) {
+      continue;
+    }
+
+    field.connectionTitleField = titleField.key as string;
+    field.connectionIdType = getConnectionIdType(orm, field.connectionEntity!);
+    child.fields.push(titleField);
+  }
+}
 function getConnectionIdType(
   orm: EasyOrm,
   connectionEntity: string,
@@ -57,6 +82,10 @@ function getConnectionIdType(
       return "IntField";
     case "data":
       return "DataField";
+    case "field": {
+      const fieldKey = entity.config.idMethod.field;
+      return entity.fields.find((field) => field.key === fieldKey)!.fieldType;
+    }
   }
 }
 

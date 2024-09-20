@@ -21,6 +21,7 @@ export function buildRecordClass(orm: EasyOrm, entity: EntityDefinition) {
     _afterSave: Array<HookFunction> = hooks.afterSave;
 
     _validate: Array<HookFunction> = hooks.validate;
+    _beforeValidate: Array<HookFunction> = hooks.beforeValidate;
 
     actions: Record<string, EntityAction> = actions;
     orm = orm;
@@ -67,6 +68,7 @@ function extractHooks(entity: EntityDefinition) {
     beforeSave: [],
     afterSave: [],
     validate: [],
+    beforeValidate: [],
   };
   Object.entries(entity.hooks).forEach(([key, value]) => {
     hooks[key as EntityHook] = getHookActions(value);

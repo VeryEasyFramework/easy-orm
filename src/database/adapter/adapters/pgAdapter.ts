@@ -56,6 +56,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async disconnect(): Promise<void> {
   }
   async query<T>(query: string): Promise<RowsResult<T>> {
+    console.log("query", query);
     const result = await this.pool.query<T>(query);
     const columns = result.columns.map((column) => {
       return this.camelCase ? column.camelName : column.name;
@@ -127,6 +128,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         columnType = "SERIAL";
         break;
       case "data":
+        columnType = "VARCHAR(255)";
+        break;
+      case "field":
         columnType = "VARCHAR(255)";
         break;
       default:
