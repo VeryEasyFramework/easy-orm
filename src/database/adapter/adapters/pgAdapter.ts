@@ -197,8 +197,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       orFilter = this.makeOrFilter(options.orFilter);
     }
     if (andFilter && orFilter) {
-      query += ` WHERE ${andFilter} AND ${orFilter}`;
-      countQuery += ` WHERE ${andFilter} AND ${orFilter}`;
+      query += ` WHERE ${andFilter} AND (${orFilter})`;
+      countQuery += ` WHERE ${andFilter} AND (${orFilter})`;
     } else if (andFilter) {
       query += ` WHERE ${andFilter}`;
       countQuery += ` WHERE ${andFilter}`;
@@ -288,6 +288,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       if (typeof filters[key] === "object") {
         const filter = filters[key] as AdvancedFilter;
         const value = formatValue(filter.value);
+        if (!value) {
+          return "";
+        }
         const operator = filter.op;
         switch (operator) {
           case "=":
@@ -369,7 +372,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       return `${column} = ${formatValue(filters[key])}`;
     });
 
-    return filterStrings;
+    return filterStrings.filter((filter) => filter !== "");
   }
 
   private makeOrFilter(
@@ -530,11 +533,17 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
 }
 
-function formatValue(value: any): string {
+function formatValue(value: any): string | undefined {
   if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return;
+    }
     return value.map((v) => formatValue(v)).join(", ");
   }
   if (typeof value === "string") {
+    if (value === "") {
+      return;
+    }
     // check if there's already a single quote
     if (value.includes("'")) {
       // escape the single quote
