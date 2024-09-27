@@ -315,10 +315,13 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
       if (typeof filters[key] === "object") {
         const filter = filters[key] as AdvancedFilter;
+
         const operator = filter.op;
         const joinList = !(operator === "between" || operator === "notBetween");
         const value = formatValue(filter.value, joinList);
-
+        if (!value) {
+          return "";
+        }
         switch (operator) {
           case "=":
             filterString = `${column} = ${value}`;
@@ -399,7 +402,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       return `${column} = ${formatValue(filters[key])}`;
     });
 
-    return filterStrings;
+    return filterStrings.filter((filter) => filter !== "");
   }
 
   private makeOrFilter(
@@ -564,14 +567,20 @@ type ValueType<Join> = Join extends false ? Array<string> : string;
 function formatValue<Join extends boolean>(
   value: any,
   joinList?: Join,
-): ValueType<Join> {
+): ValueType<Join> | undefined {
   if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return;
+    }
     if (joinList) {
       return value.map((v) => formatValue(v)).join(", ") as ValueType<Join>;
     }
     return value.map((v) => formatValue(v)) as ValueType<Join>;
   }
   if (typeof value === "string") {
+    if (value === "") {
+      return;
+    }
     // check if there's already a single quote
     if (value.includes("'")) {
       // escape the single quote
