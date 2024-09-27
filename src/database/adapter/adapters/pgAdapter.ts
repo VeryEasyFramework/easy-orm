@@ -16,7 +16,6 @@ export interface PostgresConfig {
   clientOptions: PgClientConfig;
   size: number;
   lazy?: boolean;
-  camelCase?: boolean;
   schema?: string;
 }
 
@@ -37,7 +36,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   // unique: boolean;
 
   private pool!: PostgresPool;
-  camelCase: boolean = false;
+  camelCase: boolean = true;
 
   schema: string = "public";
 
@@ -45,8 +44,6 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     return camelToSnakeCase(value);
   }
   async init(): Promise<void> {
-    const config = this.config;
-    this.camelCase = config.camelCase || false;
     this.pool = new PostgresPool(this.config);
     await this.pool.initialized();
   }
@@ -228,8 +225,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       orFilter = this.makeOrFilter(options.orFilter);
     }
     if (andFilter && orFilter) {
-      query += ` WHERE ${andFilter} AND ${orFilter}`;
-      countQuery += ` WHERE ${andFilter} AND ${orFilter}`;
+      query += ` WHERE ${andFilter} AND (${orFilter})`;
+      countQuery += ` WHERE ${andFilter} AND (${orFilter})`;
     } else if (andFilter) {
       query += ` WHERE ${andFilter}`;
       countQuery += ` WHERE ${andFilter}`;
@@ -318,8 +315,10 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
       if (typeof filters[key] === "object") {
         const filter = filters[key] as AdvancedFilter;
-        const value = formatValue(filter.value);
         const operator = filter.op;
+        const joinList = !(operator === "between" || operator === "notBetween");
+        const value = formatValue(filter.value, joinList);
+
         switch (operator) {
           case "=":
             filterString = `${column} = ${value}`;
@@ -423,7 +422,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   ): Promise<void> {
     tableName = this.toSnake(tableName);
     let query = `UPDATE ${this.schema}.${tableName} SET ${
-      camelToSnakeCase(field)
+      this.formatColumnName(field)
     } = ${formatValue(value)}`;
     if (filters) {
       query += " WHERE ";
@@ -561,9 +560,16 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
 }
 
-function formatValue(value: any): string {
+type ValueType<Join> = Join extends false ? Array<string> : string;
+function formatValue<Join extends boolean>(
+  value: any,
+  joinList?: Join,
+): ValueType<Join> {
   if (Array.isArray(value)) {
-    return value.map((v) => formatValue(v)).join(", ");
+    if (joinList) {
+      return value.map((v) => formatValue(v)).join(", ") as ValueType<Join>;
+    }
+    return value.map((v) => formatValue(v)) as ValueType<Join>;
   }
   if (typeof value === "string") {
     // check if there's already a single quote
@@ -571,10 +577,10 @@ function formatValue(value: any): string {
       // escape the single quote
       value = value.replace(/'/g, "''");
     }
-    return `'${value}'`;
+    return `'${value}'` as ValueType<Join>;
   }
   if (!value) {
-    return "null";
+    return "null" as ValueType<Join>;
   }
   return value;
 }

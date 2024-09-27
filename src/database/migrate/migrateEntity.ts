@@ -33,7 +33,7 @@ export async function migrateEntity(options: {
 
   const primaryField = entity.fields.find((f) => f.primaryKey) || idField;
   if (!tableExists) {
-    const result = await database.adapter.createTable(
+    await database.adapter.createTable(
       tableName,
       primaryField,
       entity.config.idMethod,

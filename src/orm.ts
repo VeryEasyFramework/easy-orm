@@ -133,10 +133,10 @@ export class EasyOrm<
       progress(
         count,
         total,
-        message(`Migrating ${entity.entityId}`, "brightBlue"),
+        message(`Migratings ${entity.entityId}`, "brightBlue"),
       );
 
-      const res = await migrateEntity({
+      await migrateEntity({
         database: this.database,
         entity,
         onOutput: (message) => {
