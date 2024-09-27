@@ -133,7 +133,7 @@ export class EasyOrm<
       progress(
         count,
         total,
-        message(`Migratings ${entity.entityId}`, "brightBlue"),
+        message(`Migrating ${entity.entityId}`, "brightBlue"),
       );
 
       await migrateEntity({
