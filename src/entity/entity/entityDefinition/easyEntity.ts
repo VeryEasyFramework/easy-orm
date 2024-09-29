@@ -1,5 +1,9 @@
 import type { EasyField } from "#/entity/field/easyField.ts";
 import { raiseOrmException } from "#/ormException.ts";
+import {
+  ChildEntityModel,
+  EntityChildDefinition,
+} from "#/entity/child/childEntity.ts";
 
 import type {
   EasyEntityConfig,
@@ -21,7 +25,9 @@ export class EasyEntity {
   readonly fields: Array<EasyField>;
   readonly fieldGroups: Array<FieldGroupDefinition>;
 
-  readonly config: EasyEntityConfig;
+  readonly children: Array<EntityChildDefinition>;
+
+  config: EasyEntityConfig;
 
   readonly actions: Array<EntityAction>;
 
@@ -37,6 +43,7 @@ export class EasyEntity {
       description: "The default field group",
     }];
     this.fields = [];
+    this.children = [];
     this.actions = [];
 
     this.hooks = {
@@ -45,6 +52,7 @@ export class EasyEntity {
       beforeInsert: [],
       afterInsert: [],
       validate: [],
+      beforeValidate: [],
     };
 
     this.actions = [];
@@ -54,12 +62,17 @@ export class EasyEntity {
       label: options?.label || camelToTitleCase(this.entityId),
       description: options?.description || "",
       tableName: camelToSnakeCase(this.entityId),
+      idMethod: {
+        type: "hash",
+        hashLength: 16,
+      },
     };
   }
   setConfig(config: Partial<EasyEntityConfig>) {
-    Object.entries(config).forEach(([key, value]) => {
-      this.config[key as keyof EasyEntityConfig] = value as any;
-    });
+    this.config = {
+      ...this.config,
+      ...config,
+    };
   }
 
   addField(field: EasyField) {
@@ -108,5 +121,17 @@ export class EasyEntity {
       key: actionName,
       ...actionDefinition,
     });
+  }
+
+  addChild(child: EntityChildDefinition) {
+    // check if the child is already in the list by the key
+    if (this.children.find((c) => c.childName === child.childName)) {
+      raiseOrmException(
+        "InvalidChild",
+        `Child with key ${child.childName} already exists in entity ${this.entityId}`,
+      );
+    }
+
+    this.children.push(child);
   }
 }

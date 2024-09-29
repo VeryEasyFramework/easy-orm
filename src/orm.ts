@@ -25,9 +25,7 @@ import { FetchRegistry } from "#/entity/registry.ts";
 import { buildRecordClass } from "#/entity/entity/entityRecord/buildRecordClass.ts";
 import type { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
 
-export class EasyOrm<
-  D extends keyof DatabaseConfig = keyof DatabaseConfig,
-> {
+export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
   easyEntities: Array<EasyEntity> = [];
   entities: Record<string, EntityDefinition> = {};
   entityClasses: Record<string, typeof EntityRecord> = {};
@@ -136,7 +134,7 @@ export class EasyOrm<
         message(`Migrating ${entity.entityId}`, "brightBlue"),
       );
 
-      const res = await migrateEntity({
+      await migrateEntity({
         database: this.database,
         entity,
         onOutput: (message) => {
@@ -253,10 +251,13 @@ export class EasyOrm<
     return await this.getEntity(entityId, id);
   }
 
-  async countEntities(entityId: string, options?: {
-    filter: ListOptions["filter"];
-    orFilter?: ListOptions["orFilter"];
-  }): Promise<number> {
+  async countEntities(
+    entityId: string,
+    options?: {
+      filter: ListOptions["filter"];
+      orFilter?: ListOptions["orFilter"];
+    },
+  ): Promise<number> {
     const entityDef = this.getEntityDef(entityId);
     const result = await this.database.getRows(entityDef.config.tableName, {
       filter: options?.filter,
@@ -308,9 +309,7 @@ export class EasyOrm<
     }
     return entity;
   }
-  getEntityDef(
-    entityId: string,
-  ): EntityDefinition {
+  getEntityDef(entityId: string): EntityDefinition {
     const def = this.entities[entityId];
     if (!def) {
       raiseOrmException(
@@ -321,9 +320,7 @@ export class EasyOrm<
     return def;
   }
 
-  private getEntityClass(
-    entityId: string,
-  ): typeof EntityRecord {
+  private getEntityClass(entityId: string): typeof EntityRecord {
     const entityClass = this.entityClasses[entityId];
     if (!entityClass) {
       raiseOrmException(
@@ -345,10 +342,7 @@ export class EasyOrm<
     return false;
   }
 
-  async exists(
-    entityId: string,
-    id: string,
-  ): Promise<boolean> {
+  async exists(entityId: string, id: string): Promise<boolean> {
     if (!this.hasEntity(entityId)) {
       return false;
     }

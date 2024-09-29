@@ -7,16 +7,15 @@ import {
 import { camelToSnakeCase, toCamelCase } from "@vef/string-utils";
 import { PostgresPool } from "#/database/adapter/adapters/postgres/pgPool.ts";
 import type { PgClientConfig } from "#/database/adapter/adapters/postgres/pgTypes.ts";
-import { PgError } from "#/database/adapter/adapters/postgres/pgError.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 import type { EasyFieldType, SafeType } from "#/entity/field/fieldTypes.ts";
 import { raiseOrmException } from "#/ormException.ts";
+import { IdMethodType } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 
 export interface PostgresConfig {
   clientOptions: PgClientConfig;
   size: number;
   lazy?: boolean;
-  camelCase?: boolean;
   schema?: string;
 }
 
@@ -37,7 +36,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   // unique: boolean;
 
   private pool!: PostgresPool;
-  camelCase: boolean = false;
+  camelCase: boolean = true;
 
   schema: string = "public";
 
@@ -45,8 +44,6 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     return camelToSnakeCase(value);
   }
   async init(): Promise<void> {
-    const config = this.config;
-    this.camelCase = config.camelCase || false;
     this.pool = new PostgresPool(this.config);
     await this.pool.initialized();
   }
@@ -56,6 +53,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async disconnect(): Promise<void> {
   }
   async query<T>(query: string): Promise<RowsResult<T>> {
+    // console.log("query", query);
     const result = await this.pool.query<T>(query);
     const columns = result.columns.map((column) => {
       return this.camelCase ? column.camelName : column.name;
@@ -101,11 +99,41 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     const result = await this.query<{ tableName: string }>(query);
     return result.rowCount > 0;
   }
-  async createTable(tableName: string, idField: EasyField): Promise<void> {
+  async createTable(
+    tableName: string,
+    idField: EasyField,
+    idMethod: IdMethodType,
+  ): Promise<void> {
     tableName = this.toSnake(tableName);
-    const columnName = camelToSnakeCase(idField.key as string);
-
-    const columnType = this.getColumnType(idField);
+    const columnName = this.formatColumnName(idField.key as string);
+    let columnType = "";
+    switch (idMethod.type) {
+      case "number":
+        if (idMethod.autoIncrement) {
+          columnType = "SERIAL";
+        } else {
+          columnType = "INTEGER";
+        }
+        break;
+      case "hash":
+        columnType = `VARCHAR(${idMethod.hashLength})`;
+        break;
+      case "uuid":
+        columnType = "UUID";
+        break;
+      case "series":
+        columnType = "SERIAL";
+        break;
+      case "data":
+        columnType = "VARCHAR(255)";
+        break;
+      case "field":
+        columnType = "VARCHAR(255)";
+        break;
+      default:
+        columnType = "VARCHAR(255)";
+        break;
+    }
 
     const query =
       `CREATE TABLE IF NOT EXISTS ${this.schema}.${tableName} (${columnName} ${columnType} PRIMARY KEY)`;
@@ -287,11 +315,13 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
       if (typeof filters[key] === "object") {
         const filter = filters[key] as AdvancedFilter;
-        const value = formatValue(filter.value);
+
+        const operator = filter.op;
+        const joinList = !(operator === "between" || operator === "notBetween");
+        const value = formatValue(filter.value, joinList);
         if (!value) {
           return "";
         }
-        const operator = filter.op;
         switch (operator) {
           case "=":
             filterString = `${column} = ${value}`;
@@ -395,7 +425,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   ): Promise<void> {
     tableName = this.toSnake(tableName);
     let query = `UPDATE ${this.schema}.${tableName} SET ${
-      camelToSnakeCase(field)
+      this.formatColumnName(field)
     } = ${formatValue(value)}`;
     if (filters) {
       query += " WHERE ";
@@ -533,12 +563,19 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
 }
 
-function formatValue(value: any): string | undefined {
+type ValueType<Join> = Join extends false ? Array<string> : string;
+function formatValue<Join extends boolean>(
+  value: any,
+  joinList?: Join,
+): ValueType<Join> | undefined {
   if (Array.isArray(value)) {
     if (value.length === 0) {
       return;
     }
-    return value.map((v) => formatValue(v)).join(", ");
+    if (joinList) {
+      return value.map((v) => formatValue(v)).join(", ") as ValueType<Join>;
+    }
+    return value.map((v) => formatValue(v)) as ValueType<Join>;
   }
   if (typeof value === "string") {
     if (value === "") {
@@ -549,10 +586,10 @@ function formatValue(value: any): string | undefined {
       // escape the single quote
       value = value.replace(/'/g, "''");
     }
-    return `'${value}'`;
+    return `'${value}'` as ValueType<Join>;
   }
   if (!value) {
-    return "null";
+    return "null" as ValueType<Join>;
   }
   return value;
 }

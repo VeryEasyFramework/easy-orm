@@ -30,10 +30,14 @@ export async function migrateEntity(options: {
   const tableExists = await database.adapter.tableExists(tableName);
 
   // If the table does not exist, create it
-  idField.fieldType = database.idFieldType;
+
   const primaryField = entity.fields.find((f) => f.primaryKey) || idField;
   if (!tableExists) {
-    const result = await database.adapter.createTable(tableName, primaryField);
+    await database.adapter.createTable(
+      tableName,
+      primaryField,
+      entity.config.idMethod,
+    );
     onOutput(`Created table: ${tableName}`);
   } else {
     onOutput(`Table ${tableName} already exists`);
@@ -62,10 +66,9 @@ export async function migrateEntity(options: {
   // Create the missing columns
   for (const field of fieldsToCreate) {
     if (field.fieldType === "ConnectionField") {
-      field.fieldType = database.idFieldType;
+      field.fieldType = field.connectionIdType!;
     }
-    const output = await database.adapter.addColumn(tableName, field);
-    onOutput(output);
+    await database.adapter.addColumn(tableName, field);
   }
   if (fieldsToCreate.length > 0) {
     onOutput(`Created columns: ${fieldsToCreate.map((f) => f.key).join(", ")}`);

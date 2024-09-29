@@ -1,6 +1,14 @@
 import type { EasyField } from "#/entity/field/easyField.ts";
 
-import type { BaseFields } from "#/entity/defineEntityTypes.ts";
+export interface EntityChildConfig {
+  tableName: string;
+}
+export interface EntityChildDefinition {
+  childName: string;
+  label: string;
+  fields: EasyField[];
+  config?: EntityChildConfig;
+}
 export abstract class ChildEntityModel {
   abstract parentEntityModel: string;
   abstract parentEntityID: string;
@@ -10,9 +18,3 @@ export abstract class ChildEntityModel {
   abstract label: string;
   abstract fields: EasyField[];
 }
-
-export type ChildEntity<M extends ChildEntityModel> =
-  & {
-    [K in M["fields"][number]["key"]]: M["fields"][number]["fieldType"];
-  }
-  & BaseFields;

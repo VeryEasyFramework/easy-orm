@@ -2,6 +2,7 @@ import type { EasyField } from "../../entity/field/easyField.ts";
 
 import type * as databaseTs from "#/database/database.ts";
 import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import { IdMethodType } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 
 export interface RowsResult<T> {
   rowCount: number;
@@ -33,7 +34,11 @@ export abstract class DatabaseAdapter<C> {
 
   abstract disconnect(): Promise<void>;
 
-  abstract createTable(tableName: string, idField: EasyField): Promise<void>;
+  abstract createTable(
+    tableName: string,
+    idField: EasyField,
+    idMethod: IdMethodType,
+  ): Promise<void>;
 
   abstract addColumn(tableName: string, easyField: EasyField): Promise<void>;
 

@@ -5,6 +5,7 @@ import type {
   SafeType,
 } from "#/entity/field/fieldTypes.ts";
 import type { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
+import { EntityChildDefinition } from "#/entity/child/childEntity.ts";
 
 export interface FieldGroupDefinition {
   key: string;
@@ -19,11 +20,56 @@ export interface FieldGroup {
   fields: Array<EasyField>;
 }
 
+interface IdMethod {
+  type: "number" | "uuid" | "hash" | "series" | "data" | "field";
+}
+
+interface NumberMethod extends IdMethod {
+  type: "number";
+  autoIncrement: boolean;
+}
+
+interface UuidMethod extends IdMethod {
+  type: "uuid";
+}
+
+interface HashMethod extends IdMethod {
+  type: "hash";
+  hashLength: number;
+}
+
+interface SeriesMethod extends IdMethod {
+  type: "series";
+}
+
+interface DataMethod extends IdMethod {
+  type: "data";
+}
+
+interface FieldMethod extends IdMethod {
+  type: "field";
+  field: string;
+}
+export type IdMethodType =
+  | NumberMethod
+  | UuidMethod
+  | HashMethod
+  | DataMethod
+  | SeriesMethod
+  | FieldMethod;
 export interface EasyEntityConfig {
   label: string;
   description: string;
   titleField?: string;
   tableName: string;
+  idMethod:
+    | NumberMethod
+    | UuidMethod
+    | HashMethod
+    | SeriesMethod
+    | DataMethod
+    | FieldMethod;
+
   orderField?: string;
   orderDirection?: "asc" | "desc";
 }
@@ -43,6 +89,7 @@ export type EasyEntityHooks = {
   beforeInsert: Array<EntityHookDefinition>;
   afterInsert: Array<EntityHookDefinition>;
   validate: Array<EntityHookDefinition>;
+  beforeValidate: Array<EntityHookDefinition>;
 };
 
 export interface EntityActionParam {
@@ -77,6 +124,7 @@ export interface EntityAction extends EntityActionDefinition {
 export interface EntityDefinition {
   entityId: string;
   fields: Array<EasyField>;
+  children: Array<EntityChildDefinition>;
   fieldGroups: Array<FieldGroup>;
   listFields: Array<string>;
   config: EasyEntityConfig;

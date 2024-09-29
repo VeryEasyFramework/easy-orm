@@ -126,6 +126,8 @@ export interface EasyField {
 
   connectionEntity?: string;
 
+  connectionIdType?: EasyFieldType;
+
   connectionTitleField?: string;
 
   /**
