@@ -144,6 +144,7 @@ export class EntityRecord implements EntityRecord {
   }
   async save() {
     await this.validate(this._data);
+
     await this.getFetchedFields();
     if (this._isNew) {
       await this.beforeInsert();
@@ -227,6 +228,7 @@ export class EntityRecord implements EntityRecord {
 
   private async setIdIfNew() {
     if (!this.id) {
+      this._isNew = true;
       const method = this.entityDefinition.config.idMethod;
       let id: string | number | null;
       switch (method.type) {
@@ -269,7 +271,6 @@ export class EntityRecord implements EntityRecord {
           id = this._data[method.field];
           break;
       }
-      this._isNew = true;
       if (this.primaryKey) {
         this._data[this.primaryKey] = id;
         return;

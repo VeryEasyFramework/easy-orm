@@ -53,7 +53,6 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   async disconnect(): Promise<void> {
   }
   async query<T>(query: string): Promise<RowsResult<T>> {
-    // console.log("query", query);
     const result = await this.pool.query<T>(query);
     const columns = result.columns.map((column) => {
       return this.camelCase ? column.camelName : column.name;
