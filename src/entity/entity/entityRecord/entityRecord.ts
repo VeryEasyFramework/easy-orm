@@ -121,6 +121,7 @@ export class EntityRecord implements EntityRecord {
   async validate(data: Record<string, any>) {
     data = this.dropExtraFields(data);
     data = this.validateFieldTypes(data);
+
     data = await this.validateConnections(data);
 
     this._data = data;
@@ -186,6 +187,9 @@ export class EntityRecord implements EntityRecord {
     data = this.validateFieldTypes(data);
     this._prevData = { ...this._data };
     const mergedData = { ...this._data, ...data };
+    this._data = {
+      ...mergedData,
+    };
     await this.validate(mergedData);
   }
 
@@ -298,7 +302,7 @@ export class EntityRecord implements EntityRecord {
   private getChangedData() {
     const changedData: Record<string, any> = {};
     for (const key in this._data) {
-      if (this._data[key] !== this._prevData[key]) {
+      if (this._data[key] != this._prevData[key]) {
         changedData[key] = this._data[key];
       }
     }
@@ -381,8 +385,11 @@ export class EntityRecord implements EntityRecord {
     );
     for (const field of fields) {
       //  field.fetchOptions!.thisIdKey
+
       const { fetchEntity, thatFieldKey, thisFieldKey, thisIdKey } = field
         .fetchOptions!;
+
+      const id = this._data[thisIdKey];
       const value = await this.orm.getValue(
         fetchEntity,
         this._data[thisIdKey],
@@ -458,8 +465,8 @@ export class EntityRecord implements EntityRecord {
       // const connectionFields = field.connection!.fetchFields || [];
       // if it's empty, clear any fetch fields
       if (isEmpty(data[field.key])) {
-        for (const fetchField of connectionFields) {
-          data[fetchField.key] = null;
+        if (field.connectionTitleField) {
+          data[field.connectionTitleField] = null;
         }
         continue;
       }
@@ -479,19 +486,13 @@ export class EntityRecord implements EntityRecord {
         );
       }
 
-      // Fetch fields
-      if (connectionFields.length > 0) {
-        const connectionData = await this.orm.getEntity(
-          field.connectionEntity,
-          data[field.key],
-        );
-        for (const connectionField of connectionFields) {
-          if (connectionField.key in connectionData) {
-            data[connectionField.key] =
-              connectionData[connectionField.key as keyof EntityRecord];
-          }
-        }
-      }
+      // if (field.connectionTitleField) {
+      //   const entity = await this.orm.getEntity(
+      //     field.connectionEntity,
+      //     data[field.key],
+      //   );
+      //   data[field.connectionTitleField] = entity[field.connectionTitleField];
+      // }
     }
     return data;
   }

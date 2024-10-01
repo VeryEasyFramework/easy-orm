@@ -11,7 +11,7 @@ export interface EasyFieldTypeMap {
   TimeStampField: number;
   BooleanField: boolean;
   PasswordField: string;
-  ChoicesField: string;
+  ChoicesField: string | number;
   MultiChoiceField: string[];
   TextField: string;
   EmailField: string;

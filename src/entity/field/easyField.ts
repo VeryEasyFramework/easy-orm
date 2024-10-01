@@ -7,7 +7,7 @@ import type {
  * The choice definition for a field that's set to `ChoicesField` or `MultiChoiceField`.
  */
 interface Choice {
-  key: string;
+  key: string | number;
   label: string;
   color?:
     | "primary"
