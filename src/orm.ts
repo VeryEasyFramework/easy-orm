@@ -188,6 +188,8 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
     data: Record<string, SafeType>,
   ): Promise<EntityRecord> {
     const entityRecord = await this.getEntity(entityId, id);
+    console.log("entityRecord", entityRecord.data);
+    console.log("data", data);
     await entityRecord.update(data);
     await entityRecord.save();
     return entityRecord;

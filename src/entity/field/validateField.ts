@@ -255,15 +255,11 @@ export function validateTextField(field: EasyField, value: any): string {
   return value;
 }
 
-export function validateChoices(field: EasyField, value: any): string {
-  if (typeof value !== "string") {
-    raiseOrmException(
-      "InvalidValue",
-      `Invalid value for ChoicesField ${
-        field.label ? field.label : field.key as string
-      }: ${value}`,
-    );
+export function validateChoices(field: EasyField, value: any): string | null {
+  if (!value) {
+    return null;
   }
+
   if (!field.choices) {
     raiseOrmException(
       "InvalidField",
