@@ -1,6 +1,7 @@
 import { raiseOrmException } from "#/ormException.ts";
 import type { EasyField } from "#/entity/field/easyField.ts";
 import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import { EasyOrm } from "#/orm.ts";
 
 export function validateBoolean(field: EasyField, value: any): boolean {
   let hasError = false;
@@ -180,7 +181,10 @@ export function validateData(field: EasyField, value: any): string {
   return value;
 }
 
-export function validateEmail(field: EasyField, value: string): string {
+export function validateEmail(field: EasyField, value: string): string | null {
+  if (!value) {
+    return null;
+  }
   if (typeof value !== "string") {
     raiseOrmException(
       "InvalidValue",
@@ -315,7 +319,10 @@ export function validateMultiChoices(field: EasyField, value: any): string[] {
   return value;
 }
 
-export function validatePassword(field: EasyField, value: any): string {
+export function validatePassword(field: EasyField, value: any): string | null {
+  if (!value) {
+    return null;
+  }
   if (typeof value !== "string") {
     raiseOrmException(
       "InvalidValue",
@@ -327,7 +334,10 @@ export function validatePassword(field: EasyField, value: any): string {
   return value;
 }
 
-export function validatePhone(field: EasyField, value: any): string {
+export function validatePhone(field: EasyField, value: any): string | null {
+  if (!value) {
+    return null;
+  }
   if (typeof value !== "string") {
     raiseOrmException(
       "InvalidValue",
@@ -347,7 +357,11 @@ export function validatePhone(field: EasyField, value: any): string {
   return value;
 }
 
-export function validateField(field: EasyField, value: any) {
+export function validateField(
+  field: EasyField,
+  value: any,
+  orm: EasyOrm,
+) {
   switch (field.fieldType as EasyFieldType) {
     case "BooleanField":
       value = validateBoolean(field, value);
@@ -395,10 +409,6 @@ export function validateField(field: EasyField, value: any) {
       value = validateTimeStamp(field, value);
       break;
     case "ConnectionField":
-      raiseOrmException(
-        "InvalidFieldType",
-        `ConnectionField ${field.key as string} must be handled separately`,
-      );
       break;
     default:
       raiseOrmException(
@@ -407,5 +417,34 @@ export function validateField(field: EasyField, value: any) {
       );
   }
 
+  return value;
+}
+
+export async function validateConnection(
+  field: EasyField,
+  value: any,
+  orm: EasyOrm,
+) {
+  if (!value) {
+    return null;
+  }
+  if (field.fieldType !== "ConnectionField") {
+    raiseOrmException(
+      "InvalidFieldType",
+      `Field ${field.key as string} is not a ConnectionField`,
+    );
+  }
+  if (!field.connectionEntity) {
+    raiseOrmException(
+      "InvalidField",
+      `ConnectionField ${field.key as string} must have a connectionEntity`,
+    );
+  }
+  if (!await orm.exists(field.connectionEntity, value)) {
+    raiseOrmException(
+      "EntityNotFound",
+      `Connection ${field.connectionEntity} with id ${value} does not exist`,
+    );
+  }
   return value;
 }
