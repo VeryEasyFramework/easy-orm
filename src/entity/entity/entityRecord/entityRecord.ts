@@ -221,7 +221,6 @@ export class EntityRecord implements EntityRecord {
   update(data: Record<string, any>): void {
     for (const key in data) {
       if (!this.entityDefinition.fields.find((field) => field.key === key)) {
-        console.log("field not found", key);
         continue;
       }
       this[key] = data[key];
@@ -516,7 +515,6 @@ export class EntityRecord implements EntityRecord {
     );
 
     for (const field of fields) {
-      console.log("field", field.label, changedData[field.key]);
       if (
         !await this.orm.exists(field.connectionEntity!, changedData[field.key])
       ) {
