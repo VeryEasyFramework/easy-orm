@@ -331,6 +331,7 @@ export class PostgresClient {
             row[field.camelName] = convertToDataType(
               column,
               field.dataTypeID,
+              field.dataType,
             );
           }
           data.push(row as T);
