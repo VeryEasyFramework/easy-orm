@@ -1,3 +1,5 @@
+export { SettingsEntity } from "#/entity/settings/settingsEntity.ts";
+
 export { generateId, isEmpty } from "#/utils/misc.ts";
 
 export { EasyEntity } from "#/entity/entity/entityDefinition/easyEntity.ts";
@@ -28,6 +30,7 @@ export type {
   DatabaseConfig,
   DBType,
 } from "#/database/database.ts";
+
 export type { RowsResult } from "#/database/adapter/databaseAdapter.ts";
 export type { PostgresConfig } from "#/database/adapter/adapters/pgAdapter.ts";
 export type { JSONConfig } from "#/database/adapter/adapters/jsonAdapter.ts";

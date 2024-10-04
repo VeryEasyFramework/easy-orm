@@ -50,7 +50,6 @@ export abstract class DatabaseAdapter<C> {
 
   abstract insert(
     tableName: string,
-    id: string,
     data: Record<string, any>,
   ): Promise<any>;
 

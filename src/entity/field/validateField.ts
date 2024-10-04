@@ -360,7 +360,6 @@ export function validatePhone(field: EasyField, value: any): string | null {
 export function validateField(
   field: EasyField,
   value: any,
-  orm: EasyOrm,
 ) {
   switch (field.fieldType as EasyFieldType) {
     case "BooleanField":

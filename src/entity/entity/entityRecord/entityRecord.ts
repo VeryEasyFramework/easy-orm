@@ -3,7 +3,7 @@ import type {
   EntityDefinition,
   FieldMethod,
 } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
-import type { HookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
+import type { EntitityHookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
 import type {
   EasyFieldType,
   EasyFieldTypeMap,
@@ -83,17 +83,17 @@ export class EntityRecord implements EntityRecord {
   }
   entityDefinition!: EntityDefinition;
 
-  _beforeInsert!: Array<HookFunction>;
+  _beforeInsert!: Array<EntitityHookFunction>;
 
-  _afterInsert!: Array<HookFunction>;
+  _afterInsert!: Array<EntitityHookFunction>;
 
-  _beforeSave!: Array<HookFunction>;
+  _beforeSave!: Array<EntitityHookFunction>;
 
-  _afterSave!: Array<HookFunction>;
+  _afterSave!: Array<EntitityHookFunction>;
 
-  _validate!: Array<HookFunction>;
+  _validate!: Array<EntitityHookFunction>;
 
-  _beforeValidate!: Array<HookFunction>;
+  _beforeValidate!: Array<EntitityHookFunction>;
 
   actions!: Record<string, EntityAction>;
 
@@ -159,7 +159,6 @@ export class EntityRecord implements EntityRecord {
       const changed = this.adaptChangedData(this._data);
       await this.orm.database.insertRow(
         this.entityDefinition.config.tableName,
-        this.id,
         changed,
       );
       await this.afterInsert();
@@ -381,6 +380,7 @@ export class EntityRecord implements EntityRecord {
             break;
           case "data":
             break;
+        
           default:
             fieldType = "DataField";
         }

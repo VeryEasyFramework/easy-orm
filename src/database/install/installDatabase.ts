@@ -12,7 +12,7 @@ async function createSettingsTable(database: Database<any>) {
   const tableName = "easy_settings";
   const fields: EasyField[] = [
     {
-      key: "entity",
+      key: "settingsId",
       fieldType: "DataField",
     },
     {
@@ -21,7 +21,7 @@ async function createSettingsTable(database: Database<any>) {
     },
     {
       key: "value",
-      fieldType: "TextField",
+      fieldType: "JSONField",
     },
   ];
   const exists = await database.adapter.tableExists(tableName);

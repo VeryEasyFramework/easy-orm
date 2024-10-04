@@ -149,7 +149,6 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
 
   async insert(
     tableName: string,
-    id: string,
     data: Record<string, any>,
   ): Promise<any> {
     tableName = this.toSnake(tableName);
