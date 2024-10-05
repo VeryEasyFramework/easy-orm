@@ -5,7 +5,7 @@ import type {
   EntityHookDefinition,
 } from "#/entity/entity/entityDefinition/entityDefTypes.ts";
 import { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
-import type { HookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
+import type { EntitityHookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
 import type { EasyOrm } from "#/orm.ts";
 import {
   validateConnection,
@@ -18,15 +18,15 @@ export function buildRecordClass(orm: EasyOrm, entity: EntityDefinition) {
   const actions = extractActions(entity);
   const entityRecordClass = class extends EntityRecord {
     entityDefinition = entity;
-    _beforeInsert: Array<HookFunction> = hooks.beforeInsert;
+    _beforeInsert: Array<EntitityHookFunction> = hooks.beforeInsert;
 
-    _afterInsert: Array<HookFunction> = hooks.afterInsert;
+    _afterInsert: Array<EntitityHookFunction> = hooks.afterInsert;
 
-    _beforeSave: Array<HookFunction> = hooks.beforeSave;
-    _afterSave: Array<HookFunction> = hooks.afterSave;
+    _beforeSave: Array<EntitityHookFunction> = hooks.beforeSave;
+    _afterSave: Array<EntitityHookFunction> = hooks.afterSave;
 
-    _validate: Array<HookFunction> = hooks.validate;
-    _beforeValidate: Array<HookFunction> = hooks.beforeValidate;
+    _validate: Array<EntitityHookFunction> = hooks.validate;
+    _beforeValidate: Array<EntitityHookFunction> = hooks.beforeValidate;
 
     actions: Record<string, EntityAction> = actions;
     orm = orm;
@@ -55,7 +55,7 @@ function setFields(
         return this._data[field.key];
       },
       set: function (value) {
-        value = validateField(field, value, this.orm);
+        value = validateField(field, value);
         if (this._data[field.key] === value) {
           return;
         }
@@ -74,7 +74,7 @@ function extractHooks(entity: EntityDefinition) {
       return hookAction.action;
     });
   };
-  const hooks: Record<EntityHook, HookFunction[]> = {
+  const hooks: Record<EntityHook, EntitityHookFunction[]> = {
     beforeInsert: [],
     afterInsert: [],
     beforeSave: [],

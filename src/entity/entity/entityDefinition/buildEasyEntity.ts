@@ -1,11 +1,11 @@
 import type { EasyField } from "../../field/easyField.ts";
 import type { EntityDefinition, FieldGroup } from "./entityDefTypes.ts";
 import { camelToSnakeCase, toPascalCase } from "@vef/string-utils";
-import { raiseOrmException } from "#/ormException.ts";
 import type { EasyEntity } from "./easyEntity.ts";
 import type { EasyOrm } from "#/orm.ts";
-import { EasyFieldType } from "#/entity/field/fieldTypes.ts";
-import { EntityChildDefinition } from "#/entity/child/childEntity.ts";
+import type { EasyFieldType } from "#/entity/field/fieldTypes.ts";
+import type { EntityChildDefinition } from "#/entity/child/childEntity.ts";
+import { buildFieldGroups } from "#/entity/field/buildFieldGroups.ts";
 
 export function buildEasyEntity(
   orm: EasyOrm,
@@ -147,33 +147,4 @@ function buildListFields(easyEntity: EasyEntity) {
   listFields.push("updatedAt");
   listFields.push("id");
   return listFields;
-}
-
-function buildFieldGroups(easyEntity: EasyEntity): FieldGroup[] {
-  const groups: Record<string, FieldGroup> = {
-    default: {
-      key: "default",
-      title: "Default",
-      fields: [],
-    },
-  };
-  const groupKeys = easyEntity.fieldGroups.map((group) => group.key);
-  easyEntity.fieldGroups.forEach((group) => {
-    groups[group.key] = {
-      ...group,
-      fields: [],
-    };
-  });
-
-  for (const field of easyEntity.fields) {
-    const groupKey = field.group || "default";
-    if (!groupKeys.includes(groupKey)) {
-      raiseOrmException(
-        "InvalidFieldGroup",
-        `Field group ${groupKey} in field ${field.key} does not exist in ${easyEntity.entityId} entity`,
-      );
-    }
-    groups[groupKey].fields.push(field);
-  }
-  return Object.values(groups);
 }

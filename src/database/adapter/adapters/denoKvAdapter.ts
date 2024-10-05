@@ -71,10 +71,10 @@ export class DenoKvAdapter extends DatabaseAdapter<DenoKvConfig> {
   }
   async insert(
     tableName: string,
-    id: string,
     data: Record<string, any>,
   ): Promise<any> {
     const keys = Object.keys(data);
+    const id = data.id;
     await this.kv.set([`${tableName}:id`, id], data);
     for (const key of keys) {
       await this.kv.set([`${tableName}:${id}`, key], data[key]);

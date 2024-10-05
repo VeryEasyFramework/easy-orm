@@ -25,6 +25,12 @@ import { FetchRegistry } from "#/entity/registry.ts";
 import { buildRecordClass } from "#/entity/entity/entityRecord/buildRecordClass.ts";
 import type { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
 import { User } from "#/utils/misc.ts";
+import { SettingsEntity } from "../mod.ts";
+import { migrateSettingsEntity } from "#/database/migrate/migrateSettingsEntity.ts";
+import { SettingsRecord } from "#/entity/settings/settingsRecord.ts";
+import { buildSettingsEntity } from "#/entity/settings/buildSettingsEntity.ts";
+import { SettingsEntityDefinition } from "#/entity/settings/settingsDefTypes.ts";
+import { buildSettingsRecordClass } from "#/entity/settings/buildSettingsRecordClass.ts";
 
 type GlobalHook = (
   entityId: string,
@@ -60,7 +66,11 @@ interface HookMap {
 export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
   easyEntities: Array<EasyEntity> = [];
   entities: Record<string, EntityDefinition> = {};
+  settingsDefinitions: Record<string, SettingsEntityDefinition> = {};
+
+  settingsEntities: Array<SettingsEntity> = [];
   entityClasses: Record<string, typeof EntityRecord> = {};
+  settingsClasses: Record<string, typeof SettingsRecord> = {};
   private globalHooks: GlobalHooks = {
     beforeInsert: [],
     afterInsert: [],
@@ -108,6 +118,9 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
     this.buildEntities();
     this.validateEntities();
     this.createEntityClasses();
+
+    this.buildSettingsEntities();
+    this.createSettingsClasses();
   }
   stop() {
     this.database.stop();
@@ -120,13 +133,29 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
         "Cannot add entity after initialization",
       );
     }
-    if (this.easyEntities.find((e) => e.entityId === entity.entityId)) {
+    if (this.hasEntity(entity.entityId)) {
       raiseOrmException(
-        "EntityAlreadyExists",
-        `Entity ${entity.entityId} already exists`,
+        "InvalidOperation",
+        `Entity with id ${entity.entityId} already exists!`,
       );
     }
     this.easyEntities.push(entity);
+  }
+
+  addSettingsEntity(entity: SettingsEntity) {
+    if (this.initialized) {
+      raiseOrmException(
+        "InvalidOperation",
+        "Cannot add entity after initialization",
+      );
+    }
+    if (this.hasSettingsEntity(entity.settingsId)) {
+      raiseOrmException(
+        "InvalidOperation",
+        `Settings entity with id ${entity.settingsId} already exists!`,
+      );
+    }
+    this.settingsEntities.push(entity);
   }
 
   async runGlobalHook<H extends keyof GlobalHooks>(
@@ -151,6 +180,17 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
       this.entities[entityDefinition.entityId] = entityDefinition;
     }
   }
+
+  private buildSettingsEntities() {
+    for (const settingsEntity of this.settingsEntities) {
+      const settingsEntityDefinition = buildSettingsEntity(
+        this,
+        settingsEntity,
+      );
+      this.settingsDefinitions[settingsEntityDefinition.settingsId] =
+        settingsEntityDefinition;
+    }
+  }
   private validateEntities() {
     for (const entityDefinition of Object.values(this.entities)) {
       validateEntityDefinition(this, entityDefinition);
@@ -164,6 +204,20 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
     }
   }
 
+  private createSettingsClasses() {
+    for (
+      const settingsEntityDefinition of Object.values(
+        this.settingsDefinitions,
+      )
+    ) {
+      const settingsRecordClass = buildSettingsRecordClass(
+        this,
+        settingsEntityDefinition,
+      );
+      this.settingsClasses[settingsEntityDefinition.settingsId] =
+        settingsRecordClass;
+    }
+  }
   async install() {
     await installDatabase({
       database: this.database,
@@ -204,6 +258,15 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
         total,
         message(`Migrated ${entity.entityId}`, "brightGreen"),
       );
+    }
+    for (const settingsEntity of this.settingsEntities) {
+      await migrateSettingsEntity({
+        database: this.database,
+        settingsEntity,
+        onOutput: (message) => {
+          progress(count, total, message);
+        },
+      });
     }
     return results;
   }
@@ -407,6 +470,12 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
     return false;
   }
 
+  hasSettingsEntity(entity: string): boolean {
+    if (entity in this.settingsDefinitions) {
+      return true;
+    }
+    return false;
+  }
   async exists(entityId: string, id: string): Promise<boolean> {
     if (!this.hasEntity(entityId)) {
       return false;
@@ -419,5 +488,52 @@ export class EasyOrm<D extends keyof DatabaseConfig = keyof DatabaseConfig> {
       id,
     );
     return result ? true : false;
+  }
+
+  /**
+   * Settings entity methods
+   */
+
+  async getSettings(
+    settingsId: string,
+    user?: User,
+  ): Promise<SettingsRecord> {
+    const settingsClass = this.getSettingsClass(settingsId);
+    const settingsRecord = new settingsClass();
+    settingsRecord._user = user;
+    await settingsRecord.load();
+    return settingsRecord;
+  }
+
+  async updateSettings(
+    settingsId: string,
+    data: Record<string, any>,
+    user?: User,
+  ): Promise<SettingsRecord> {
+    const settingsRecord = await this.getSettings(settingsId, user);
+    settingsRecord.update(data);
+    await settingsRecord.save();
+    return settingsRecord;
+  }
+  private getSettingsClass(settingsId: string): typeof SettingsRecord {
+    const settingsClass = this.settingsClasses[settingsId];
+    if (!settingsClass) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Settings entity '${settingsId}' is not a registered entity!`,
+      );
+    }
+    return settingsClass;
+  }
+
+  getSettingsEntity(settingsId: string): SettingsEntityDefinition {
+    const settingsEntity = this.settingsDefinitions[settingsId];
+    if (!settingsEntity) {
+      raiseOrmException(
+        "EntityNotFound",
+        `Settings entity '${settingsId}' is not a registered entity!`,
+      );
+    }
+    return settingsEntity;
   }
 }
