@@ -205,6 +205,34 @@ export function validateEmail(field: EasyField, value: string): string | null {
   return value;
 }
 
+export function validateRichText(field: EasyField, value: any): string | null {
+  return validateJson(field, value);
+}
+
+export function validateURL(field: EasyField, value: any): string | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value !== "string") {
+    raiseOrmException(
+      "InvalidValue",
+      `Invalid value for URLField ${
+        field.label ? field.label : field.key as string
+      }: ${value}`,
+    );
+  }
+  try {
+    const url = new URL(value);
+    return value;
+  } catch (_e) {
+    raiseOrmException(
+      "InvalidValue",
+      `Invalid value for URLField ${
+        field.label ? field.label : field.key as string
+      }: ${value}`,
+    );
+  }
+}
 export function validateJson(field: EasyField, value: any): string | null {
   if (value === null) {
     return null;
@@ -409,6 +437,13 @@ export function validateField(
       break;
     case "ConnectionField":
       break;
+    case "RichTextField":
+      value = validateJson(field, value);
+      break;
+    case "URLField":
+      value = validateTextField(field, value);
+      break;
+
     default:
       raiseOrmException(
         "NotImplemented",

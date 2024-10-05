@@ -152,12 +152,17 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     data: Record<string, any>,
   ): Promise<any> {
     tableName = this.toSnake(tableName);
-    const columns = this.getColumns(data);
-    const values = this.getValues(data);
-    const valuesWithColumns = columns.join(", ");
-    const valuesString = values.join(", ");
-    const query =
-      `INSERT INTO ${this.schema}.${tableName} (${valuesWithColumns}) VALUES (${valuesString}) RETURNING *`;
+    const columnKeys = Object.keys(data);
+    const columns = columnKeys.map((key) => {
+      return this.formatColumnName(key);
+    });
+
+    const values = columnKeys.map((key) => {
+      return formatValue(data[key]);
+    });
+    const query = `INSERT INTO ${this.schema}.${tableName} (${
+      columns.join(", ")
+    }) VALUES (${values.join(", ")}) RETURNING *`;
     const result = await this.query(query);
     return result;
   }
@@ -169,36 +174,22 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
     } = ${formatValue(value)}`;
     await this.query(query);
   }
-  private getColumns(data: Record<string, any>): string[] {
-    return Object.keys(data).map((key) => this.formatColumnName(key));
-  }
-  private getValues(data: Record<string, any>): string[] {
-    const values = Object.values(data);
-    return values.map((value) => {
-      if (typeof value === "string") {
-        return `'${value}'`;
-      }
-      return value;
-    });
-  }
-  async update(
+
+  async update<T>(
     tableName: string,
     id: string | number,
     data: Record<string, any>,
-  ): Promise<any> {
+  ): Promise<RowsResult<T>> {
     tableName = this.toSnake(tableName);
-    const columns = this.getColumns(data);
-    const values = this.getValues(data);
-    const idValue = typeof id === "string" ? `'${id}'` : id;
-    const valuesWithColumns = columns.map((column, index) => {
-      return `${column} = ${values[index]}`;
+    const values = Object.entries(data).map(([key, value]) => {
+      return `${this.formatColumnName(key)} = ${formatValue(value)}`;
     });
+    const idValue = formatValue(id);
+
     const query = `UPDATE ${this.schema}.${tableName} SET ${
-      valuesWithColumns.join(
-        ", ",
-      )
-    } WHERE id = ${idValue}`;
-    const result = await this.query(query);
+      values.join(", ")
+    } WHERE id = ${idValue} RETURNING *`;
+    const result = await this.query<T>(query);
     return result;
   }
 
@@ -452,6 +443,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         return "VARCHAR(255)";
       case "JSONField":
         return "JSONB";
+      case "RichTextField":
+        return "JSONB";
       case "EmailField":
         return "TEXT";
       case "ImageField":
@@ -472,6 +465,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         return "TIMESTAMP";
       case "IDField":
         return "VARCHAR(255)";
+      case "URLField":
+        return "TEXT";
       default:
         return "TEXT";
     }
@@ -499,6 +494,15 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
         }
         value = JSON.parse(value);
         break;
+      case "RichTextField":
+        if (typeof value === "string") {
+          value = JSON.parse(value);
+        }
+        if (typeof value === "object") {
+          break;
+        }
+        value = JSON.parse(value);
+        break;
       case "EmailField":
         break;
       case "ImageField":
@@ -512,6 +516,8 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       case "PasswordField":
         break;
       case "PhoneField":
+        break;
+      case "URLField":
         break;
       case "ConnectionField":
         break;
@@ -534,6 +540,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       case "DateField":
         break;
 
+      case "URLField":
+        break;
+
       case "IntField":
         break;
       case "BigIntField":
@@ -543,6 +552,9 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
       case "DataField":
         break;
       case "JSONField":
+        value = value ? JSON.stringify(value) : null;
+        break;
+      case "RichTextField":
         value = value ? JSON.stringify(value) : null;
         break;
       case "EmailField":
@@ -585,15 +597,13 @@ function formatValue<Join extends boolean>(
     }
     return value.map((v) => formatValue(v)) as ValueType<Join>;
   }
+  console.log("value", value);
   if (typeof value === "string") {
     if (value === "") {
-      return;
+      return "''" as ValueType<Join>;
     }
-    // check if there's already a single quote
-    if (value.includes("'")) {
-      // escape the single quote
-      value = value.replace(/'/g, "''");
-    }
+    // escape single quotes
+    value = value.replaceAll(/'/g, "''");
     return `'${value}'` as ValueType<Join>;
   }
   if (!value) {
