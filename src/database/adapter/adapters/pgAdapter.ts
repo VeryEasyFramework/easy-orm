@@ -597,7 +597,6 @@ function formatValue<Join extends boolean>(
     }
     return value.map((v) => formatValue(v)) as ValueType<Join>;
   }
-  console.log("value", value);
   if (typeof value === "string") {
     if (value === "") {
       return "''" as ValueType<Join>;
