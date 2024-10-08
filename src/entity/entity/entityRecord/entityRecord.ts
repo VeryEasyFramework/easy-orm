@@ -13,7 +13,6 @@ import { raiseOrmException } from "#/ormException.ts";
 import type { EasyOrm } from "#/orm.ts";
 import { dateUtils } from "#/utils/dateUtils.ts";
 import { generateId, isEmpty, User } from "#/utils/misc.ts";
-import { validateField } from "#/entity/field/validateField.ts";
 
 export interface EntityRecord {
   beforeInsert(): Promise<void>;
@@ -380,7 +379,7 @@ export class EntityRecord implements EntityRecord {
             break;
           case "data":
             break;
-        
+
           default:
             fieldType = "DataField";
         }

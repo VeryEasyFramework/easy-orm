@@ -5,6 +5,9 @@ import { EasyOrm } from "#/orm.ts";
 
 export function validateBoolean(field: EasyField, value: any): boolean {
   let hasError = false;
+  if (value === null || value === undefined) {
+    return false;
+  }
   switch (typeof value) {
     case "boolean":
       break;
