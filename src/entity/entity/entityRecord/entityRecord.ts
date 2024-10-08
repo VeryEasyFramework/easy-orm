@@ -473,6 +473,10 @@ export class EntityRecord implements EntityRecord {
 
   private setDefaultValues(data: Record<PropertyKey, any>) {
     for (const field of this.entityDefinition.fields) {
+      if (field.fieldType === "BooleanField" && isEmpty(data[field.key])) {
+        data[field.key] = false;
+        continue;
+      }
       if (field.key in data && !isEmpty(data[field.key])) {
         continue;
       }
