@@ -606,6 +606,9 @@ function formatValue<Join extends boolean>(
     value = value.replaceAll(/'/g, "''");
     return `'${value}'` as ValueType<Join>;
   }
+  if (value === false) {
+    return "false" as ValueType<Join>;
+  }
   if (!value) {
     return "null" as ValueType<Join>;
   }
