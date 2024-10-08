@@ -8,10 +8,8 @@ import { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
 import type { EntitityHookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
 import type { EasyOrm } from "#/orm.ts";
 import {
-  validateConnection,
   validateField,
 } from "#/entity/field/validateField.ts";
-import { EasyField } from "../../../../mod.ts";
 
 export function buildRecordClass(orm: EasyOrm, entity: EntityDefinition) {
   const hooks = extractHooks(entity);

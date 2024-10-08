@@ -531,11 +531,12 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
   adaptSaveValue(field: EasyField | EasyFieldType, value: any): any {
     const fieldType = typeof field === "string" ? field : field.fieldType;
-    if (value === null) {
-      return null;
-    }
+
     switch (fieldType as EasyFieldType) {
       case "BooleanField":
+        if (value === null) {
+          return false;
+        }
         break;
       case "DateField":
         break;
