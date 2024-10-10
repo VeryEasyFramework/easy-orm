@@ -144,4 +144,6 @@ export interface EasyField {
    * The group that the field belongs to.
    */
   group?: string;
+
+  inCreate?: boolean;
 }
