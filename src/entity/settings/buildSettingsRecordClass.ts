@@ -22,13 +22,13 @@ export function buildSettingsRecordClass(
   const hooks = extractHooks(settingsEntity);
   const actions = extractActions(settingsEntity);
   const settingsRecordClass = class extends SettingsRecord {
-    orm = orm;
-    settingsDefinition = settingsEntity;
-    _beforeSave = hooks.beforeSave;
-    _afterSave = hooks.afterSave;
-    _validate = hooks.validate;
-    _beforeValidate = hooks.beforeValidate;
-    actions: Record<string, SettingsAction> = actions;
+    override orm = orm;
+    override settingsDefinition = settingsEntity;
+    override _beforeSave = hooks.beforeSave;
+    override _afterSave = hooks.afterSave;
+    override _validate = hooks.validate;
+    override _beforeValidate = hooks.beforeValidate;
+    override actions: Record<string, SettingsAction> = actions;
   };
 
   setFields(settingsRecordClass, settingsEntity);
