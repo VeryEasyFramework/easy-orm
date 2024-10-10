@@ -494,7 +494,10 @@ export class EntityRecord implements EntityRecord {
         case "JSONField":
           data[field.key] = {};
           break;
-        case "IntField" || "BigIntField":
+        case "IntField":
+          data[field.key] = 0;
+          break;
+        case "BigIntField":
           data[field.key] = 0;
           break;
         default:

@@ -7,27 +7,26 @@ import type {
 import { EntityRecord } from "#/entity/entity/entityRecord/entityRecord.ts";
 import type { EntitityHookFunction } from "#/entity/entity/entityRecord/entityRecordTypes.ts";
 import type { EasyOrm } from "#/orm.ts";
-import {
-  validateField,
-} from "#/entity/field/validateField.ts";
+import { validateField } from "#/entity/field/validateField.ts";
 
 export function buildRecordClass(orm: EasyOrm, entity: EntityDefinition) {
   const hooks = extractHooks(entity);
   const actions = extractActions(entity);
   const entityRecordClass = class extends EntityRecord {
-    entityDefinition = entity;
-    _beforeInsert: Array<EntitityHookFunction> = hooks.beforeInsert;
+    override entityDefinition = entity;
+    override _beforeInsert: Array<EntitityHookFunction> = hooks.beforeInsert;
 
-    _afterInsert: Array<EntitityHookFunction> = hooks.afterInsert;
+    override _afterInsert: Array<EntitityHookFunction> = hooks.afterInsert;
 
-    _beforeSave: Array<EntitityHookFunction> = hooks.beforeSave;
-    _afterSave: Array<EntitityHookFunction> = hooks.afterSave;
+    override _beforeSave: Array<EntitityHookFunction> = hooks.beforeSave;
+    override _afterSave: Array<EntitityHookFunction> = hooks.afterSave;
 
-    _validate: Array<EntitityHookFunction> = hooks.validate;
-    _beforeValidate: Array<EntitityHookFunction> = hooks.beforeValidate;
+    override _validate: Array<EntitityHookFunction> = hooks.validate;
+    override _beforeValidate: Array<EntitityHookFunction> =
+      hooks.beforeValidate;
 
-    actions: Record<string, EntityAction> = actions;
-    orm = orm;
+    override actions: Record<string, EntityAction> = actions;
+    override orm = orm;
   };
 
   // entityRecordClass = bindHooks(entityRecordClass, entity);

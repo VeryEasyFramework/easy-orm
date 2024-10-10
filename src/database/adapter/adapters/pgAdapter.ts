@@ -53,7 +53,7 @@ export class PostgresAdapter extends DatabaseAdapter<PostgresConfig> {
   }
   async disconnect(): Promise<void> {
   }
-  async query<T>(query: string): Promise<RowsResult<T>> {
+  override async query<T>(query: string): Promise<RowsResult<T>> {
     if (this.config.debug) {
       console.log(query);
     }
